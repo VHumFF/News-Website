@@ -1,29 +1,36 @@
 import React, { useState } from "react";
-import { Typography, Button, Grid, Card, CardContent, Box, CardMedia } from "@mui/material";
+import {
+  Typography,
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  Box,
+  CardMedia,
+} from "@mui/material";
 
 export default function HomePage() {
-  
   return (
     <Grid container spacing={2} sx={{ p: 2 }}>
       {/* Left Section */}
-      <Grid item xs={12} md={8}>
+      <Grid item xs={12} md={8} >
         <Grid container spacing={2}>
           {/* Breaking News Section */}
           <Grid item xs={12}>
-            <Card>
+            <Card >
               <Grid container>
                 {/* image here */}
-                <Grid item xs={6}>
+                <Grid item xs={4} >
                   <CardMedia
                     component="img"
-                    height="100%"
-                    image="/placeholder-image.jpg"
+                    height="290px"
+                    image="#"
                     alt="Breaking News Image"
                   />
                 </Grid>
                 {/* text here */}
-                <Grid item xs={6}>
-                  <CardContent>
+                <Grid item xs={8}>
+                  <CardContent >
                     <Typography variant="h5">Breaking News: Text</Typography>
                     <Typography variant="body2" color="text.secondary">
                       Text text text text text text text text text text text
@@ -45,15 +52,18 @@ export default function HomePage() {
                   <Grid item xs={4}>
                     <CardMedia
                       component="img"
-                      height="100"
-                      image="/placeholder-image.jpg"
+                      height="150"
+                    //   width="50px"
+                      image="#"
                       alt="News Image"
                     />
                   </Grid>
                   {/* text here */}
                   <Grid item xs={8}>
                     <CardContent>
-                      <Typography variant="h6">News Title {index + 1}</Typography>
+                      <Typography variant="h6">
+                        News Title {index + 1}
+                      </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Text text text text text text text text. Text text text
                         text text text text text text text.
@@ -92,8 +102,11 @@ export default function HomePage() {
   );
 }
 
-      {/* Profile Dialog */}
-      {/* <Dialog open={openProfileDialog} onClose={handleClose} sx={{ ".MuiDialog-paper": { width: "300px" } }} >
+{
+  /* Profile Dialog */
+}
+{
+  /* <Dialog open={openProfileDialog} onClose={handleClose} sx={{ ".MuiDialog-paper": { width: "300px" } }} >
         <DialogTitle sx={{ textAlign: "center" }} >User Profile</DialogTitle>
         <DialogContent>
           <Typography variant="body1">
@@ -106,4 +119,5 @@ export default function HomePage() {
         <DialogActions>
           <Button onClick={handleLogout} color="primary">Logout</Button>
         </DialogActions>
-      </Dialog> */}
+      </Dialog> */
+}
