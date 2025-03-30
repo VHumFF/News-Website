@@ -1,22 +1,14 @@
 import React from "react";
-import {
-  Typography,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  Box,
-  CardMedia,
-  useMediaQuery,
-} from "@mui/material";
+import { Grid, Box, useMediaQuery } from "@mui/material";
+import BreakingNews from "@/components/BreakingNews";
+import NewsList from "@/components/NewsList";
+import LatestNews from "@/components/LatestNews";
 
 export default function HomePage() {
-  // Use media query to detect screen width
   const isSmallScreen = useMediaQuery("(max-width:900px)");
 
   return (
-    <Box
-      sx={{ height: "100vh", overflow: "auto", p: 2, }} >
+    <Box sx={{ height: "100vh", overflow: "auto", p: 2 }}>
       <Grid container spacing={2}>
         {/* Left Section */}
         <Grid
@@ -29,66 +21,14 @@ export default function HomePage() {
             paddingBottom: "20px",
           }}
         >
-          <Grid container spacing={2}>
-            {/* Breaking News Section */}
-            <Grid item xs={12}>
-              <Card>
-                <Grid container>
-                  {/* Image */}
-                  <Grid item xs={4}>
-                    <CardMedia
-                      component="img"
-                      height="290px"
-                      image="#"
-                      alt="Breaking News Image"
-                    />
-                  </Grid>
-                  {/* Text */}
-                  <Grid item xs={8}>
-                    <CardContent>
-                      <Typography variant="h5">Breaking News: Text</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Text text text text text text text text text text text
-                        text text text text text text text text text text text
-                        text text text text text text text text text text text.
-                      </Typography>
-                    </CardContent>
-                  </Grid>
-                </Grid>
-              </Card>
-            </Grid>
+          {/* Breaking News */}
+          <BreakingNews />
 
-            {/* News Cards Section */}
-            {[...Array(10)].map((_, index) => (
-              <Grid item xs={12} md={6} key={index}>
-                <Card>
-                  <Grid container>
-                    {/* Image */}
-                    <Grid item xs={4}>
-                      <CardMedia
-                        component="img"
-                        height="150"
-                        image="#"
-                        alt="News Image"
-                      />
-                    </Grid>
-                    {/* Text */}
-                    <Grid item xs={8}>
-                      <CardContent>
-                        <Typography variant="h6">
-                          News Title {index + 1}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Text text text text text text text text. Text text
-                          text text text text text text text text.
-                        </Typography>
-                      </CardContent>
-                    </Grid>
-                  </Grid>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          {/* Space between BreakingNews and NewsList */}
+          <Box sx={{ height: 24 }} />
+
+          {/* News List */}
+          <NewsList />
         </Grid>
 
         {/* Right Section */}
@@ -102,29 +42,10 @@ export default function HomePage() {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            paddingBottom: isSmallScreen ? "90px" : "20px", // Dynamic padding
+            paddingBottom: isSmallScreen ? "90px" : "20px",
           }}
         >
-          <Card sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            <CardContent sx={{ overflowY: "auto", flexGrow: 1 }}>
-              <Typography variant="h6" gutterBottom>
-                Latest
-              </Typography>
-              {[...Array(20)].map((_, index) => (
-                <Box key={index} sx={{ mb: 2 }}>
-                  <Typography variant="caption">{1 + index * 5}m ago</Typography>
-                  <Typography variant="body2" noWrap>
-                    Title: text text text text text text text text text text text
-                  </Typography>
-                </Box>
-              ))}
-            </CardContent>
-            <Box sx={{ p: 2 }}>
-              <Button variant="outlined" fullWidth>
-                View All News
-              </Button>
-            </Box>
-          </Card>
+          <LatestNews />
         </Grid>
       </Grid>
     </Box>

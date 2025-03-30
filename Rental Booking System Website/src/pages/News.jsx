@@ -7,7 +7,7 @@ import NewsPage from "../features/auth/NewsPage";
 export default function News() {
 
   return (
-    <Box sx={{ bgcolor: "white", minHeight: "100vh" }}>
+    <Box sx={{ bgcolor: "white", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Navbar */}
       <Header />
       
