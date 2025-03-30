@@ -1,50 +1,40 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import {
-  Grid,
-  Typography,
-  Select,
-  MenuItem,
-  Button,
-  Card,
-  CardContent,
-  CardMedia,
-  Box,
-} from "@mui/material";
+import { useParams, useNavigate } from "react-router-dom";
+import { Grid, Typography, Select, MenuItem, Button, Card, CardContent, CardMedia, Box, } from "@mui/material";
 
 export default function News() {
-  const location = useLocation();
-  const [filter, setFilter] = useState("Latest");
-  const [category, setCategory] = useState("Nation");
+  const { category: urlCategory, filter: urlFilter } = useParams(); // get cate from url
+  const navigate = useNavigate();
+  const [filter, setFilter] = useState("latest");
+  const [category, setCategory] = useState(null); // default as null
 
   useEffect(() => {
-    if (location.state?.filter) {
-      setFilter(location.state.filter);
+    // based on url change the category
+    if (urlFilter) {
+      setFilter(urlFilter.toLowerCase());
     }
-    if (location.state?.category) {
-        setCategory(location.state.category);
-      }
-  }, [location.state]);
+    setCategory(urlCategory || null); // if no category, null
+  }, [urlFilter, urlCategory]);
 
   const handleFilterChange = (event) => {
-    setFilter(event.target.value);
+    const selectedFilter = event.target.value.toLowerCase();
+    setFilter(selectedFilter);
+    // refresh URL
+    if (urlCategory) {
+      navigate(`/news/${urlCategory}/${selectedFilter}`);
+    } else {
+      navigate(`/news/${selectedFilter}`);
+    }
   };
 
   return (
-    <Box sx={{ p: 3, height: "100vh" }}>
+    <Box sx={{ p: 3, minHeight: "100vh" }}>
       {/* News / Nation and Filter Row */}
       <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          height: "20px",
-        }}
-      >
-        {/* News / Nation */}
-        <Typography variant="h6" sx={{ color: "black" }} >
-          News / {category}
+        sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, height: "20px", }} >
+        {/* News / Category */}
+        <Typography variant="h6" sx={{ color: "black" }}>
+          News{category ? ` / ${category.charAt(0).toUpperCase() + category.slice(1)}` : ""}
         </Typography>
 
         {/* Filter By */}
@@ -52,46 +42,53 @@ export default function News() {
           <Typography variant="body1" sx={{ mr: 2 }}>
             Filter by:
           </Typography>
-          <Select value={filter} onChange={handleFilterChange} sx={{ height: "30px", }} >
-            <MenuItem value="Latest">Latest</MenuItem>
-            <MenuItem value="Trending">Trending</MenuItem>
+          <Select value={filter} onChange={handleFilterChange} sx={{ height: "30px" }} >
+            <MenuItem value="latest">Latest</MenuItem>
+            <MenuItem value="trending">Trending</MenuItem>
           </Select>
-          <Button variant="contained" sx={{ ml: 2 }}>
-            Go
-          </Button>
         </Box>
       </Box>
 
       {/* News List */}
-      <Box sx={{ height: "calc(100vh - 180px)", overflowY: "auto", flex: "1 1 auto", padding: 2,}} >
+      <Box
+        sx={{
+          height: "calc(100vh - 180px)",
+          overflowY: "auto",
+          flex: "1 1 auto",
+          padding: 2,
+        }}
+      >
         <Grid container spacing={2}>
-            {[...Array(5)].map((_, index) => (
+          {[...Array(5)].map((_, index) => (
             <Grid item xs={12} key={index}>
-                <Card>
+              <Card>
                 <Grid container>
-                    <Grid item xs={4}>
+                  <Grid item xs={4}>
                     <CardMedia
-                        component="img"
-                        height="150"
-                        image="#"
-                        alt="News Image"
+                      component="img"
+                      height="150"
+                      image="#"
+                      alt="News Image"
                     />
-                    </Grid>
-                    <Grid item xs={8}>
+                  </Grid>
+                  <Grid item xs={8}>
                     <CardContent>
-                        <Typography variant="h6">News Title {index + 1}</Typography>
-                        <Typography variant="body2" color="text.secondary">
+                      <Typography variant="h6">
+                        News Title {index + 1}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
                         Text text text text text text text text. Text text text
                         text text text text text text text.
-                        </Typography>
+                      </Typography>
                     </CardContent>
-                    </Grid>
+                  </Grid>
                 </Grid>
-                </Card>
+              </Card>
             </Grid>
-            ))}
+          ))}
         </Grid>
       </Box>
+      
     </Box>
   );
 }

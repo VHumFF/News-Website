@@ -16,12 +16,7 @@ export default function HomePage() {
 
   return (
     <Box
-      sx={{
-        height: "100vh",
-        overflow: "auto", // Allows entire page to scroll
-        p: 2,
-      }}
-    >
+      sx={{ height: "100vh", overflow: "auto", p: 2, }} >
       <Grid container spacing={2}>
         {/* Left Section */}
         <Grid
