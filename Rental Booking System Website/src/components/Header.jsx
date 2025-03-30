@@ -1,7 +1,35 @@
 import React, { useState } from "react";
-import { AppBar, Toolbar, Typography, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Box,
+  IconButton,
+  Menu,
+  MenuItem,
+} from "@mui/material";
+import { Menu as MenuIcon } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { useMediaQuery } from "@mui/material";
 
 export default function Header() {
+  const navigate = useNavigate();
+  const isSmallScreen = useMediaQuery("(max-width:682px)");
+  const isVerySmallScreen = useMediaQuery("(max-width:520px)");
+
+  const handleNavigateHome = () => {
+    navigate("/");
+  };
+
+  const handleNavigateToNews = (option) => {
+    navigate("/news", { state: { filter: option } });
+  };
 
   // for user profile
   const [openProfileDialog, setOpenProfileDialog] = useState(false);
@@ -9,7 +37,7 @@ export default function Header() {
   const handleProfileClick = () => {
     setOpenProfileDialog(true);
   };
-  
+
   const handleClose = () => {
     setOpenProfileDialog(false);
   };
@@ -19,57 +47,174 @@ export default function Header() {
     alert("Logout!!");
   };
 
-  // navigate to the page
-  const handleTrending = () => {
-    alert("Trending page!!");
+  // Menu for small screens
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [categoryMenuAnchor, setCategoryMenuAnchor] = useState(null);
+
+  const handleMenuOpen = (event) => {
+    setMenuAnchor(event.currentTarget);
   };
 
-  const handleLatest = () => {
-    alert("Latest page!!");
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setCategoryMenuAnchor(null);
   };
 
-  const handleCategory = () => {
-    alert("Category page!!");
+  const handleCategoryMenuOpen = (event) => {
+    setCategoryMenuAnchor(event.currentTarget);
   };
 
-  
+  const categories = [
+    "Nation",
+    "World",
+    "Education",
+    "Music",
+    "Sport",
+    "Drama",
+    "Tech",
+    "Food",
+  ];
+
+  const handleCategoryClick = (category) => {
+    navigate("/news", { state: { category } });
+    setMenuAnchor(null);
+  };
+
   return (
-    <AppBar position="static" color="default">
-      <Toolbar>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          The News
-        </Typography>
-        <Button color="inherit" onClick={handleTrending} >Trending</Button>
-        <Button color="inherit" onClick={handleLatest} >Latest</Button>
-        <Button color="inherit " onClick={handleCategory} >Category</Button>
-        <TextField
-          variant="outlined"
-          placeholder="Search"
-          size="small"
-          sx={{ mx: 2, bgcolor: "white" }}
-        />
-        <Button variant="contained">Search</Button>
-        <Button color="inherit" onClick={handleProfileClick} >
-          UserName
-        </Button>
-      </Toolbar>
+    <Box>
+      <AppBar position="static" color="default" sx={{ boxShadow: 0 }}>
+        <Toolbar>
+          {/* Menu Icon for Small Screens */}
+          {isSmallScreen && (
+            <>
+              <IconButton
+                color="inherit"
+                edge="start"
+                onClick={handleMenuOpen}
+              >
+                <MenuIcon />
+              </IconButton>
+              <Menu
+                anchorEl={menuAnchor}
+                open={Boolean(menuAnchor)}
+                onClose={handleMenuClose}
+              >
+                <MenuItem onClick={() => handleNavigateToNews("Trending")}>
+                  Trending
+                </MenuItem>
+                <MenuItem onClick={() => handleNavigateToNews("Latest")}>
+                  Latest
+                </MenuItem>
+                <MenuItem onClick={handleCategoryMenuOpen}>
+                  Category
+                </MenuItem>
+                <Menu
+                  anchorEl={categoryMenuAnchor}
+                  open={Boolean(categoryMenuAnchor)}
+                  onClose={handleMenuClose}
+                >
+                  {categories.map((category, index) => (
+                    <MenuItem
+                      key={index}
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      {category}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </Menu>
+            </>
+          )}
 
-      {/* Profile Dialog */}
-      <Dialog open={openProfileDialog} onClose={handleClose} sx={{ ".MuiDialog-paper": { width: "300px" } }} >
-        <DialogTitle sx={{ textAlign: "center" }} >User Profile</DialogTitle>
-        <DialogContent>
-          <Typography variant="body1">
-            <strong>Username:</strong> userNme
+          {/* "The News" - navigates to home */}
+          <Typography
+            variant="h6"
+            sx={{ flexGrow: 1, cursor: "pointer" }}
+            onClick={handleNavigateHome}
+          >
+            The News
           </Typography>
-          <Typography variant="body1">
-            <strong>Email:</strong> user@email.com
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleLogout} color="primary">Logout</Button>
-        </DialogActions>
-      </Dialog>
-    </AppBar>
-    
+
+          {/* Buttons for Large Screens */}
+          {!isSmallScreen && (
+            <>
+              <Button
+                color="inherit"
+                onClick={() => handleNavigateToNews("Trending")}
+              >
+                Trending
+              </Button>
+              <Button
+                color="inherit"
+                onClick={() => handleNavigateToNews("Latest")}
+              >
+                Latest
+              </Button>
+              <Button color="inherit" onClick={handleCategoryMenuOpen}>
+                Category
+              </Button>
+              <Menu
+                anchorEl={categoryMenuAnchor}
+                open={Boolean(categoryMenuAnchor)}
+                onClose={handleMenuClose}
+              >
+                {categories.map((category, index) => (
+                  <MenuItem
+                    key={index}
+                    onClick={() => handleCategoryClick(category)}
+                  >
+                    {category}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          )}
+
+          {/* Search Bar and Button */}
+          <TextField
+            variant="outlined"
+            placeholder="Search"
+            size="small"
+            sx={{
+              mx: 1,
+              bgcolor: "white",
+              flexGrow: isSmallScreen ? 1 : "unset",
+            }}
+          />
+          {!isVerySmallScreen && ( // Hide button for very small screens
+            <Button variant="contained" sx={{ display: "inline-block" }}>
+              Search
+            </Button>
+          )}
+
+          {/* User Profile Button */}
+          <Button color="inherit" onClick={handleProfileClick}>
+            UserName
+          </Button>
+        </Toolbar>
+
+        {/* Profile Dialog */}
+        <Dialog
+          open={openProfileDialog}
+          onClose={handleClose}
+          sx={{ ".MuiDialog-paper": { width: "300px" } }}
+        >
+          <DialogTitle sx={{ textAlign: "center" }}>User Profile</DialogTitle>
+          <DialogContent>
+            <Typography variant="body1">
+              <strong>Username:</strong> userNme
+            </Typography>
+            <Typography variant="body1">
+              <strong>Email:</strong> user@email.com
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleLogout} color="primary">
+              Logout
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </AppBar>
+    </Box>
   );
 }

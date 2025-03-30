@@ -8,7 +8,7 @@ import HomePage from "../features/auth/HomePage";
 export default function Home() {
 
   return (
-    <Box sx={{ bgcolor: "white", minHeight: "100vh" }}>
+    <Box sx={{ bgcolor: "white", minHeight: "100vh", overflow: "auto", boxShadow: 0  }}>
       {/* Navbar */}
       <Header />
       <HomePage />
