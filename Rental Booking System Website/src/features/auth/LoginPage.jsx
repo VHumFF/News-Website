@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Card, CardContent, TextField, Typography, Button, Link, Divider, InputAdornment, IconButton, } from "@mui/material";
+import { Box, Card, CardContent, TextField, Typography, Button, Divider, InputAdornment, IconButton,Dialog, DialogActions, DialogContent, DialogTitle, } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import logImg from "@/assets/images/logo.png";
 
@@ -9,6 +9,8 @@ export default function LogIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [openForgotPassword, setOpenForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
 
   // check textfield
   const isFormComplete = email.trim() && password.trim();
@@ -16,6 +18,12 @@ export default function LogIn() {
   // login function
   const LoginRequest = () => {
     alert("Logging in...");
+  };
+
+  // forgot password
+  const handleForgotPassword = () => {
+    alert(`Reset password sent to ${resetEmail}`);
+    setOpenForgotPassword(false);
   };
 
 
@@ -53,10 +61,15 @@ export default function LogIn() {
             }}
           />
 
-          {/* sign up btn */}
-          <Button fullWidth variant="contained" sx={{ bgcolor: "#6145DD", color: "white", mb: 2 }} disabled={!isFormComplete} onClick={LoginRequest} >
-            Sign Up Now
-          </Button>
+          {/* forgot password & login btn */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Button sx={{ textTransform: "none", color: "#6145DD" }} onClick={() => setOpenForgotPassword(true)} >
+              Forgot Password?
+            </Button>
+            <Button variant="contained" sx={{ bgcolor: "#6145DD", color: "white" }} disabled={!isFormComplete} onClick={LoginRequest} >
+              Log In Now
+            </Button>
+          </Box>
 
           {/* divider */}
           <Divider>or</Divider>
@@ -70,6 +83,24 @@ export default function LogIn() {
           </Typography>
         </CardContent>
       </Card>
+
+      {/* forgot password dialog */}
+      <Dialog open={openForgotPassword} onClose={() => setOpenForgotPassword(false)}>
+        <DialogTitle>Forgot Password</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Enter your email to receive a password reset link.
+          </Typography>
+          <TextField fullWidth label="Email" type="email" variant="outlined" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenForgotPassword(false)}>Cancel</Button>
+          <Button variant="contained" sx={{ bgcolor: "#6145DD", color: "white" }} disabled={!resetEmail.trim()} onClick={handleForgotPassword} >
+            Send
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   );
 }
