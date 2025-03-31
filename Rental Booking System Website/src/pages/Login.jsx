@@ -1,28 +1,11 @@
 import React from "react";
-import { Container, Box } from "@mui/material";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import LoginPage from "../features/auth/LoginPage";
-import bgImage from "../assets/images/login-bg3.jpg";
+import { Box } from "@mui/material";
+import LogInPage from "@/features/auth/LogInPage";
 
-export default function Login() {
+export default function LogIn() {
   return (
-        <Box
-        sx={{
-            backgroundImage: `url(${bgImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            minHeight: "100vh",
-            display: "flex",
-            flexDirection: "column",
-        }}
-        >
-      <Header />
-      <Container maxWidth="xs" sx={{ flexGrow: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <LoginPage />
-      </Container>
-      <Footer />
+    <Box sx={{ backgroundColor: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column" }} >
+      <LogInPage />
     </Box>
   );
 }
