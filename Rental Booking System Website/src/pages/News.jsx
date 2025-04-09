@@ -1,7 +1,7 @@
 import React from "react";
 import { Box } from "@mui/material";
 import Header from "../components/Header";
-import NewsPage from "../features/auth/NewsPage";
+import NewsListing from "../features/auth/NewsListing";
 
 
 export default function News() {
@@ -11,7 +11,7 @@ export default function News() {
       {/* Navbar */}
       <Header />
       
-      <NewsPage />
+      <NewsListing />
 
     </Box>
   );

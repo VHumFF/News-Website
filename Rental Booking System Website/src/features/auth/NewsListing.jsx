@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Grid, Typography, Select, MenuItem, Box } from "@mui/material";
 import NewsCard from "@/components/NewsCard";
 
-export default function NewsPage() {
+export default function NewsListing() {
   const { category: urlCategory, filter: urlFilter } = useParams();
   const navigate = useNavigate();
   const [filter, setFilter] = useState("latest");
