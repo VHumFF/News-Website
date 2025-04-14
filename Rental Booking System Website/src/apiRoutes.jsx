@@ -1,0 +1,108 @@
+import axios from "axios"
+
+// Base URL for all API requests
+const API_BASE_URL = "http://localhost:5239"
+
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+})
+
+// Add request interceptor to include auth token in requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("authToken")
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error),
+)
+
+// Auth endpoints
+export const authApi = {
+  login: (credentials) => api.post("/api/Auth/login", credentials),
+  register: (userData) => api.post("/api/Auth/register", userData),
+  changePassword: (passwordData) => api.post("/api/Auth/change-password", passwordData),
+  activateAccount: (token) => api.post(`/api/Auth/activate-account/${token}`),
+  resendActivation: (email) => api.post("/api/Auth/resend-activation", { email }),
+}
+
+// Articles endpoints
+export const articlesApi = {
+  getTrending: () => api.get("/api/Articles/trending"),
+  getLatest: () => api.get("/api/Articles/latest"),
+  getById: (id) => api.get(`/api/Articles/${id}`),
+  getByCategory: (categoryId) => api.get(`/api/Articles/category/${categoryId}`),
+  search: (params) => api.get("/api/Articles/search", { params }),
+  create: (articleData) => api.post("/api/Articles", articleData),
+  update: (articleId, articleData) => api.put(`/api/Articles/${articleId}`, articleData),
+  delete: (articleId) => api.delete(`/api/Articles/${articleId}`),
+  publish: (articleId) => api.put(`/api/Articles/${articleId}/publish`),
+}
+
+// Categories endpoints
+export const categoriesApi = {
+  getAll: () => api.get("/api/Categories"),
+  getById: (id) => api.get(`/api/Categories/${id}`),
+}
+
+// Comments endpoints
+export const commentsApi = {
+  getByArticle: (articleId) => api.get(`/api/comments/${articleId}`),
+  create: (commentData) => api.post("/api/comments", commentData),
+  delete: (commentId) => api.delete(`/api/comments/${commentId}`),
+}
+
+// Admin endpoints
+export const adminApi = {
+  registerJournalist: (journalistData) => api.post("/api/Admin/register-journalist", journalistData),
+}
+
+// File upload endpoints
+export const fileApi = {
+  getPresignedUrl: (fileInfo) => api.get("/presigned-url", { params: fileInfo }),
+}
+
+// Error handler helper
+export const handleApiError = (error) => {
+  const defaultMessage = "An error occurred. Please try again."
+
+  if (!error.response) {
+    return {
+      message: "Network error. Please check your connection.",
+      status: 0,
+    }
+  }
+
+  const { status, data } = error.response
+
+  return {
+    message: data.message || defaultMessage,
+    status,
+    data: data,
+  }
+}
+
+// Example usage with error handling:
+// try {
+//   const response = await articlesApi.getTrending();
+//   return response.data;
+// } catch (error) {
+//   const errorDetails = handleApiError(error);
+//   console.error(errorDetails.message);
+//   // Handle error appropriately
+// }
+
+export default {
+  auth: authApi,
+  articles: articlesApi,
+  categories: categoriesApi,
+  comments: commentsApi,
+  admin: adminApi,
+  file: fileApi,
+}

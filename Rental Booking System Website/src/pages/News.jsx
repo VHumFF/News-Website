@@ -1,18 +1,24 @@
-import React from "react";
-import { Box } from "@mui/material";
-import Header from "../components/Header";
-import NewsListing from "../features/auth/NewsListing";
-
+import { Box } from "@mui/material"
+import Header from "../components/Header"
+import NewsListing from "../features/auth/NewsListing"
 
 export default function News() {
-
   return (
-    <Box sx={{ bgcolor: "white", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <Box
+      sx={{
+        bgcolor: "white",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "auto", // Allow content to be scrollable
+      }}
+    >
       {/* Navbar */}
       <Header />
-      
-      <NewsListing />
 
+      <Box sx={{ flex: 1, overflow: "auto" }}>
+        <NewsListing />
+      </Box>
     </Box>
-  );
-};
+  )
+}

@@ -26,7 +26,7 @@ body {
   margin: 0;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
+  overflow-y: auto; /* Changed from hidden to auto to allow scrolling */
 }
 
 h1 {
