@@ -9,6 +9,7 @@ import ArticleEditor from "./pages/ArticleEditor"
 import AdminDashboard from "./pages/AdminDashboard"
 import ArticlePage from "./pages/ArticlePage"
 import AccountActivation from "./pages/AccountActivation"
+import JournalistActivation from "./pages/JournalistActivation"
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/login" element={<LogIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/activate/:token" element={<AccountActivation />} />
+        <Route path="/activate-journalist/:token" element={<JournalistActivation />} />
         <Route path="/home" element={<Home />} />
         {/* Default News Route */}
         <Route path="/news" element={<News />} />
