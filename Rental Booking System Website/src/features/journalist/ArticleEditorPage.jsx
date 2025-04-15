@@ -298,11 +298,25 @@ export default function ArticleEditorPage() {
   // Validate form
   const validateForm = () => {
     const newErrors = {
-      title: title.trim() ? "" : "Title is required",
-      description: description.trim() ? "" : "Description is required",
+      title: "",
+      description: "",
       content: content.trim() ? "" : "Content is required",
       categoryId: categoryId ? "" : "Category is required",
       imageUrl: imageUrl || imageFile ? "" : "Thumbnail image is required",
+    }
+
+    // Title validation
+    if (!title.trim()) {
+      newErrors.title = "Title is required"
+    } else if (title.length > 100) {
+      newErrors.title = `Title is too long (${title.length}/100 characters)`
+    }
+
+    // Description validation
+    if (!description.trim()) {
+      newErrors.description = "Description is required"
+    } else if (description.length > 250) {
+      newErrors.description = `Description is too long (${description.length}/250 characters)`
     }
 
     setErrors(newErrors)
@@ -758,9 +772,10 @@ export default function ArticleEditorPage() {
             onChange={(e) => setTitle(e.target.value)}
             margin="normal"
             error={!!errors.title}
-            helperText={errors.title}
+            helperText={errors.title || `${title.length}/100 characters`}
             disabled={loading}
             required
+            inputProps={{ maxLength: 100 }}
           />
 
           {/* Description */}
@@ -773,9 +788,10 @@ export default function ArticleEditorPage() {
             multiline
             rows={3}
             error={!!errors.description}
-            helperText={errors.description}
+            helperText={errors.description || `${description.length}/200 characters`}
             disabled={loading}
             required
+            inputProps={{ maxLength: 250 }}
           />
 
           {/* Category */}
