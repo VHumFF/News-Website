@@ -131,7 +131,7 @@ const NewsCardItem = ({ article, loading, onClick }) => {
       sx={{
         mb: 2,
         cursor: article ? "pointer" : "default",
-        height: 180, // Set a fixed height for the card
+        height: 200, // Increased height to accommodate the date
         display: "flex",
         flexDirection: "column",
       }}
@@ -152,8 +152,17 @@ const NewsCardItem = ({ article, loading, onClick }) => {
             />
           )}
         </Grid>
-        <Grid item xs={8}>
-          <CardContent sx={{ height: "100%", display: "flex", flexDirection: "column", py: 2.5 }}>
+        <Grid item xs={8} sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+          <CardContent
+            sx={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              py: 2,
+              pb: "8px !important", // Override the default padding bottom
+              overflow: "hidden",
+            }}
+          >
             {loading ? (
               <>
                 <Skeleton variant="text" height={32} width="80%" animation="wave" />
@@ -163,7 +172,7 @@ const NewsCardItem = ({ article, loading, onClick }) => {
               </>
             ) : (
               <>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
+                <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1, lineHeight: 1.2 }}>
                   {article?.title || "News Title"}
                 </Typography>
                 <Typography
@@ -172,18 +181,45 @@ const NewsCardItem = ({ article, loading, onClick }) => {
                   sx={{
                     overflow: "hidden",
                     display: "-webkit-box",
-                    WebkitLineClamp: 4,
+                    WebkitLineClamp: 3,
                     WebkitBoxOrient: "vertical",
                     lineHeight: 1.5,
+                    mb: 1,
+                    flexGrow: 1,
                   }}
                 >
                   {article?.description !== "no Description"
                     ? article?.description
                     : "Click to read more about this story. This article contains the latest information about this developing story."}
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: "auto", pt: 1 }}>
-                  {article?.publishedAt ? format(parseISO(article.publishedAt), "MMM d, yyyy") : ""}
-                </Typography>
+                {/* Date at the bottom with clear styling */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    mt: "auto",
+                    pt: 1,
+                    borderTop: "1px solid",
+                    borderColor: "divider",
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      fontWeight: "medium",
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    {article?.publishedAt
+                      ? new Date(article.publishedAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "Date unavailable"}
+                  </Typography>
+                </Box>
               </>
             )}
           </CardContent>

@@ -3,7 +3,7 @@
 import { Card, Grid, CardMedia, CardContent, Typography, CardActionArea } from "@mui/material"
 import { useNavigate } from "react-router-dom"
 
-export default function NewsCard({ title, description, image, articleId, slug }) {
+export default function NewsCard({ title, description, image, articleId, slug, publishedAt }) {
   const navigate = useNavigate()
 
   const handleClick = () => {
@@ -25,6 +25,15 @@ export default function NewsCard({ title, description, image, articleId, slug })
               <Typography variant="body2" color="text.secondary">
                 {description || "No description available"}
               </Typography>
+              {publishedAt && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                  {new Date(publishedAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </Typography>
+              )}
             </CardContent>
           </Grid>
         </Grid>

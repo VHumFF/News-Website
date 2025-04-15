@@ -288,7 +288,7 @@ export default function NewsListing() {
   // Handle page change
   const handlePageChange = (event, newPage) => {
     setPage(newPage)
-    
+
     // Update URL with page parameter if in search mode
     if (isSearchMode) {
       navigate(`/news/search?query=${encodeURIComponent(queryFromUrl)}&page=${newPage}`)
@@ -457,6 +457,7 @@ export default function NewsListing() {
                     image={article.imageURL || "#"}
                     articleId={article.articleID}
                     slug={article.slug}
+                    publishedAt={article.publishedAt}
                   />
                 </Grid>
               ))}
@@ -482,8 +483,8 @@ export default function NewsListing() {
                 {isSearchMode
                   ? `We couldn't find any articles matching "${queryFromUrl}". Please try different keywords or check your spelling.`
                   : category
-                  ? `We couldn't find any ${filter} articles in the ${category} category.`
-                  : `We couldn't find any ${filter} articles at this time.`}
+                    ? `We couldn't find any ${filter} articles in the ${category} category.`
+                    : `We couldn't find any ${filter} articles at this time.`}
               </Typography>
               <Button variant="outlined" startIcon={<Refresh />} onClick={handleRetry}>
                 Try Again
@@ -517,4 +518,3 @@ export default function NewsListing() {
     </Container>
   )
 }
-
