@@ -101,7 +101,7 @@ const BreakingNews = ({ article, loading, onClick }) => {
             ) : (
               <>
                 <Chip
-                  label="BREAKING NEWS"
+                  label="TRENDING NEWS"
                   color="error"
                   size="medium"
                   sx={{

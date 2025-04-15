@@ -1,7 +1,7 @@
 import axios from "axios"
 
 // Base URL for all API requests
-const API_BASE_URL = "https://wise-plaza-sponsors-sink.trycloudflare.com"
+const API_BASE_URL = "http://localhost:5239"
 
 // Create axios instance with default config
 const api = axios.create({

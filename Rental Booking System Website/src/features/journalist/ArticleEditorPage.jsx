@@ -195,10 +195,12 @@ export default function ArticleEditorPage() {
     toolbar: [
       [{ header: [1, 2, 3, 4, 5, 6, false] }],
       ["bold", "italic", "underline", "strike"],
+      [{ size: ['small', false, 'large', 'huge'] }],
+      [{ color: [] }, { background: [] }],
       [{ list: "ordered" }, { list: "bullet" }],
       [{ indent: "-1" }, { indent: "+1" }],
       [{ align: [] }],
-      ["link", "image"],
+      ['link', 'image', 'video'],
       ["clean"],
     ],
     clipboard: {
@@ -209,8 +211,11 @@ export default function ArticleEditorPage() {
   const formats = [
     "header",
     "bold",
+    'size',
     "italic",
     "underline",
+    'color',
+    "background",
     "strike",
     "list",
     "bullet",
@@ -218,7 +223,9 @@ export default function ArticleEditorPage() {
     "align",
     "link",
     "image",
+    'video',
     "imageUploadPlaceholder",
+    'align',
   ]
 
   // Get user info from token on component mount
