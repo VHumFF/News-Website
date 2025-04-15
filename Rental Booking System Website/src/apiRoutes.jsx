@@ -1,7 +1,7 @@
 import axios from "axios"
 
 // Base URL for all API requests
-const API_BASE_URL = "http://localhost:5239"
+const API_BASE_URL = "https://wise-plaza-sponsors-sink.trycloudflare.com"
 
 // Create axios instance with default config
 const api = axios.create({
@@ -69,6 +69,8 @@ export const articlesApi = {
   publish: (articleId) => api.put(`/api/Articles/${articleId}/publish`),
   getJournalistArticles: (status, page = 1, pageSize = 10) =>
     api.get(`/journalist/articles?status=${status}&page=${page}&pageSize=${pageSize}`),
+  like: (articleId) => api.post(`/api/likes/article/${articleId}/like`),
+  unlike: (articleId) => api.delete(`/api/likes/article/${articleId}/unlike`),
 }
 
 // Categories endpoints
@@ -114,6 +116,12 @@ export const handleApiError = (error) => {
   }
 }
 
+// Add likesApi for comment likes/unlikes
+export const likesApi = {
+  likeComment: (commentId) => api.post(`/api/likes/comment/${commentId}/like`),
+  unlikeComment: (commentId) => api.delete(`/api/likes/comment/${commentId}/unlike`),
+}
+
 export default {
   auth: authApi,
   articles: articlesApi,
@@ -121,4 +129,5 @@ export default {
   comments: commentsApi,
   admin: adminApi,
   file: fileApi,
+  likes: likesApi,
 }
