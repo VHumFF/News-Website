@@ -222,7 +222,7 @@ export default function JournalistDashboardPage() {
   const handleEditArticle = (articleId) => {
     console.log("Edit article:", articleId)
     // Navigate to edit page
-    // navigate(`/journalist/edit-article/${articleId}`);
+    navigate(`/journalist/edit-article/${articleId}`)
     handleCloseActionMenu()
   }
 
@@ -279,7 +279,7 @@ export default function JournalistDashboardPage() {
   const handleCreateArticle = () => {
     console.log("Create new article")
     // Navigate to create page
-    // navigate('/journalist/create-article');
+    navigate("/journalist/create-article")
   }
 
   // Handle action menu

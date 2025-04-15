@@ -5,6 +5,7 @@ import Home from "./pages/Home"
 import News from "./pages/News"
 import Profile from "./pages/Profile"
 import JournalistDashboard from "./pages/JournalistDashboard"
+import ArticleEditor from "./pages/ArticleEditor"
 
 export default function App() {
   return (
@@ -22,6 +23,9 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         {/* Journalist Dashboard Route */}
         <Route path="/journalist-dashboard" element={<JournalistDashboard />} />
+        {/* Article Editor Routes */}
+        <Route path="/journalist/create-article" element={<ArticleEditor />} />
+        <Route path="/journalist/edit-article/:articleId" element={<ArticleEditor />} />
         <Route path="/" element={<Home />} /> {/* Default route */}
       </Routes>
     </Router>
