@@ -7,22 +7,41 @@ import {
   Typography,
   Button,
   TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Box,
   IconButton,
   Menu,
   MenuItem,
   Snackbar,
   Alert,
+  Avatar,
+  Divider,
+  ListItemIcon,
 } from "@mui/material"
-import { Menu as MenuIcon } from "@mui/icons-material"
+import { Menu as MenuIcon, Person, Logout, AdminPanelSettings, Article } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useMediaQuery } from "@mui/material"
-// Import the categoriesApi from apiRoutes.jsx
 import { categoriesApi, handleApiError } from "../apiRoutes"
+
+// Function to decode JWT token
+const decodeToken = (token) => {
+  try {
+    // Split the token and get the payload part
+    const base64Url = token.split(".")[1]
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
+    // Decode the base64 string
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(""),
+    )
+    // Parse the JSON
+    return JSON.parse(jsonPayload)
+  } catch (error) {
+    console.error("Error decoding token:", error)
+    return null
+  }
+}
 
 export default function Header() {
   const navigate = useNavigate()
@@ -33,9 +52,27 @@ export default function Header() {
   const [categories, setCategories] = useState([])
   const [menuAnchor, setMenuAnchor] = useState(null)
   const [categoryMenuAnchor, setCategoryMenuAnchor] = useState(null)
-  const [openProfileDialog, setOpenProfileDialog] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  // User state
+  const [user, setUser] = useState(null)
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null)
+
+  // Get user info from token on component mount
+  useEffect(() => {
+    const token = localStorage.getItem("authToken")
+    if (token) {
+      const decodedToken = decodeToken(token)
+      if (decodedToken) {
+        setUser({
+          username: decodedToken.username || "User",
+          role: Number.parseInt(decodedToken.role || "0", 10),
+          id: decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"],
+        })
+      }
+    }
+  }, [])
 
   // fetch category from backend
   useEffect(() => {
@@ -87,10 +124,35 @@ export default function Header() {
     handleMenuClose()
   }
 
-  // user profile, logout
-  const handleProfileClick = () => setOpenProfileDialog(true)
-  const handleCloseProfileDialog = () => setOpenProfileDialog(false)
-  const handleLogout = () => alert("Logout!!")
+  // User menu handlers
+  const handleUserMenuOpen = (event) => setUserMenuAnchor(event.currentTarget)
+  const handleUserMenuClose = () => setUserMenuAnchor(null)
+
+  // Handle profile click
+  const handleProfileClick = () => {
+    handleUserMenuClose()
+    navigate("/profile")
+  }
+
+  // Handle journalist dashboard click
+  const handleJournalistDashboardClick = () => {
+    handleUserMenuClose()
+    navigate("/journalist-dashboard")
+  }
+
+  // Handle admin dashboard click
+  const handleAdminDashboardClick = () => {
+    handleUserMenuClose()
+    navigate("/admin-dashboard")
+  }
+
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem("authToken")
+    setUser(null)
+    handleUserMenuClose()
+    navigate("/login")
+  }
 
   // Close error snackbar
   const handleCloseError = () => setError(null)
@@ -110,6 +172,11 @@ export default function Header() {
         {category.name}
       </MenuItem>
     ))
+  }
+
+  // Get first letter of username for avatar
+  const getInitial = (name) => {
+    return name ? name.charAt(0).toUpperCase() : "U"
   }
 
   return (
@@ -165,33 +232,89 @@ export default function Header() {
             </Button>
           )}
 
-          {/* User Profile Button */}
-          <Button color="inherit" onClick={handleProfileClick}>
-            UserName
-          </Button>
-        </Toolbar>
+          {/* User Menu Button */}
+          {user ? (
+            <>
+              <Button
+                color="inherit"
+                onClick={handleUserMenuOpen}
+                startIcon={
+                  <Avatar
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      bgcolor: "#6145DD",
+                      fontSize: "0.875rem",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {getInitial(user.username)}
+                  </Avatar>
+                }
+                sx={{ ml: 1 }}
+              >
+                {user.username}
+              </Button>
+              <Menu
+                anchorEl={userMenuAnchor}
+                open={Boolean(userMenuAnchor)}
+                onClose={handleUserMenuClose}
+                transformOrigin={{ horizontal: "right", vertical: "top" }}
+                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+                PaperProps={{
+                  elevation: 3,
+                  sx: {
+                    minWidth: 200,
+                    mt: 1,
+                    "& .MuiMenuItem-root": {
+                      py: 1,
+                    },
+                  },
+                }}
+              >
+                <MenuItem onClick={handleProfileClick}>
+                  <ListItemIcon>
+                    <Person fontSize="small" />
+                  </ListItemIcon>
+                  Profile
+                </MenuItem>
 
-        {/* Profile Dialog */}
-        <Dialog
-          open={openProfileDialog}
-          onClose={handleCloseProfileDialog}
-          sx={{ ".MuiDialog-paper": { width: "300px" } }}
-        >
-          <DialogTitle sx={{ textAlign: "center" }}>User Profile</DialogTitle>
-          <DialogContent>
-            <Typography variant="body1">
-              <strong>Username:</strong> userNme
-            </Typography>
-            <Typography variant="body1">
-              <strong>Email:</strong> user@email.com
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleLogout} color="primary">
-              Logout
+                {/* Journalist Dashboard - only for role 1 */}
+                {user.role === 1 && (
+                  <MenuItem onClick={handleJournalistDashboardClick}>
+                    <ListItemIcon>
+                      <Article fontSize="small" />
+                    </ListItemIcon>
+                    Journalist Dashboard
+                  </MenuItem>
+                )}
+
+                {/* Admin Dashboard - only for role 2 */}
+                {user.role === 2 && (
+                  <MenuItem onClick={handleAdminDashboardClick}>
+                    <ListItemIcon>
+                      <AdminPanelSettings fontSize="small" />
+                    </ListItemIcon>
+                    Admin Dashboard
+                  </MenuItem>
+                )}
+
+                <Divider />
+
+                <MenuItem onClick={handleLogout}>
+                  <ListItemIcon>
+                    <Logout fontSize="small" />
+                  </ListItemIcon>
+                  Logout
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <Button color="inherit" onClick={() => navigate("/login")}>
+              Login
             </Button>
-          </DialogActions>
-        </Dialog>
+          )}
+        </Toolbar>
       </AppBar>
 
       {/* Error Snackbar */}
