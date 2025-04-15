@@ -43,6 +43,8 @@ export const articlesApi = {
   update: (articleId, articleData) => api.put(`/api/Articles/${articleId}`, articleData),
   delete: (articleId) => api.delete(`/api/Articles/${articleId}`),
   publish: (articleId) => api.put(`/api/Articles/${articleId}/publish`),
+  getJournalistArticles: (status, page = 1, pageSize = 10) =>
+    api.get(`/journalist/articles?status=${status}&page=${page}&pageSize=${pageSize}`),
 }
 
 // Categories endpoints

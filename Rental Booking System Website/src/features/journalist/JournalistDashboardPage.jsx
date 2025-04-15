@@ -34,6 +34,7 @@ import {
   InputAdornment,
   Menu,
   MenuItem,
+  Pagination,
 } from "@mui/material"
 import {
   Article,
@@ -48,6 +49,7 @@ import {
   Visibility,
 } from "@mui/icons-material"
 import { format, parseISO } from "date-fns"
+import { articlesApi, handleApiError } from "@/apiRoutes"
 
 // Function to decode JWT token
 const decodeToken = (token) => {
@@ -83,6 +85,11 @@ export default function JournalistDashboardPage() {
   const [actionMenuAnchor, setActionMenuAnchor] = useState(null)
   const [selectedArticle, setSelectedArticle] = useState(null)
 
+  // Pagination state
+  const [page, setPage] = useState(1)
+  const [pageSize] = useState(10)
+  const [totalCount, setTotalCount] = useState(0)
+
   // Get user info from token on component mount
   useEffect(() => {
     const token = localStorage.getItem("authToken")
@@ -112,12 +119,12 @@ export default function JournalistDashboardPage() {
     }
   }, [navigate])
 
-  // Fetch articles when tab changes or user changes
+  // Fetch articles when tab changes or user changes or page changes
   useEffect(() => {
     if (!user) return
 
     fetchArticles()
-  }, [activeTab, user])
+  }, [activeTab, user, page])
 
   // Fetch articles based on active tab
   const fetchArticles = async () => {
@@ -125,89 +132,54 @@ export default function JournalistDashboardPage() {
     setError(null)
 
     try {
-      // In a real app, you would call different API endpoints based on the active tab
-      // For now, we'll simulate this with mock data
-      const response = await getMockArticles()
-      setArticles(response)
+      // Determine status based on active tab
+      let status
+      if (activeTab === "published") {
+        status = 1 // Published
+      } else if (activeTab === "drafts") {
+        status = 0 // Draft
+      } else {
+        // For "all" tab, we'll make two requests and combine the results
+        const draftResponse = await articlesApi.getJournalistArticles(0, page, pageSize)
+        const publishedResponse = await articlesApi.getJournalistArticles(1, page, pageSize)
+
+        const combinedArticles = [...(draftResponse.data.items || []), ...(publishedResponse.data.items || [])]
+
+        // Sort by most recent update (publishedAt or last update)
+        combinedArticles.sort((a, b) => {
+          const dateA = a.publishedAt || a.updatedAt
+          const dateB = b.publishedAt || b.updatedAt
+          return new Date(dateB) - new Date(dateA)
+        })
+
+        setArticles(combinedArticles)
+        setTotalCount(draftResponse.data.totalCount + publishedResponse.data.totalCount)
+        setLoading(false)
+        return
+      }
+
+      const response = await articlesApi.getJournalistArticles(status, page, pageSize)
+      setArticles(response.data.items || [])
+      setTotalCount(response.data.totalCount || 0)
     } catch (error) {
-      console.error("Failed to fetch articles:", error)
+      const errorDetails = handleApiError(error)
+      console.error("Failed to fetch articles:", errorDetails)
       setError("Failed to load articles. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
-  // Mock function to get articles - replace with real API calls
-  const getMockArticles = () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockArticles = [
-          {
-            articleID: 1,
-            title: "Breaking News: Major Tech Announcement",
-            status: "published",
-            publishedAt: "2023-04-15T10:30:00Z",
-            updatedAt: "2023-04-15T10:30:00Z",
-            categoryName: "Technology",
-            views: 1250,
-          },
-          {
-            articleID: 2,
-            title: "New Environmental Policy Takes Effect",
-            status: "published",
-            publishedAt: "2023-04-14T08:15:00Z",
-            updatedAt: "2023-04-14T08:15:00Z",
-            categoryName: "Politics",
-            views: 980,
-          },
-          {
-            articleID: 3,
-            title: "Upcoming Sports Tournament Preview",
-            status: "draft",
-            publishedAt: null,
-            updatedAt: "2023-04-13T14:45:00Z",
-            categoryName: "Sports",
-            views: 0,
-          },
-          {
-            articleID: 4,
-            title: "Financial Markets Weekly Recap",
-            status: "draft",
-            publishedAt: null,
-            updatedAt: "2023-04-12T16:20:00Z",
-            categoryName: "Finance",
-            views: 0,
-          },
-          {
-            articleID: 5,
-            title: "New Movie Releases This Weekend",
-            status: "published",
-            publishedAt: "2023-04-11T09:10:00Z",
-            updatedAt: "2023-04-11T09:10:00Z",
-            categoryName: "Entertainment",
-            views: 2100,
-          },
-        ]
-
-        // Filter based on active tab
-        let filteredArticles
-        if (activeTab === "published") {
-          filteredArticles = mockArticles.filter((article) => article.status === "published")
-        } else if (activeTab === "drafts") {
-          filteredArticles = mockArticles.filter((article) => article.status === "draft")
-        } else {
-          filteredArticles = mockArticles
-        }
-
-        resolve(filteredArticles)
-      }, 800) // Simulate network delay
-    })
-  }
-
   // Handle tab change
   const handleTabChange = (tab) => {
     setActiveTab(tab)
     setSearchTerm("")
+    setPage(1) // Reset to first page when changing tabs
+  }
+
+  // Handle page change
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage)
   }
 
   // Handle article search
@@ -227,10 +199,10 @@ export default function JournalistDashboardPage() {
   }
 
   // Handle article view
-  const handleViewArticle = (articleId) => {
+  const handleViewArticle = (articleId, slug) => {
     console.log("View article:", articleId)
     // Navigate to view page
-    // navigate(`/news/${articleId}`);
+    navigate(`/news/${articleId}/${slug}`)
     handleCloseActionMenu()
   }
 
@@ -246,14 +218,20 @@ export default function JournalistDashboardPage() {
 
     setLoading(true)
     try {
-      // In a real app, you would call the API to delete the article
-      // await articlesApi.delete(articleToDelete.articleID);
-      console.log("Delete article:", articleToDelete.articleID)
+      await articlesApi.delete(articleToDelete.articleID)
 
       // Remove the article from the state
       setArticles(articles.filter((article) => article.articleID !== articleToDelete.articleID))
+
+      // Refresh the list if we deleted the last item on the page
+      if (articles.length === 1 && page > 1) {
+        setPage(page - 1)
+      } else {
+        fetchArticles()
+      }
     } catch (error) {
-      console.error("Failed to delete article:", error)
+      const errorDetails = handleApiError(error)
+      console.error("Failed to delete article:", errorDetails)
       setError("Failed to delete article. Please try again.")
     } finally {
       setLoading(false)
@@ -268,10 +246,19 @@ export default function JournalistDashboardPage() {
   }
 
   // Handle article publish
-  const handlePublishArticle = (articleId) => {
-    console.log("Publish article:", articleId)
-    // In a real app, you would call the API to publish the article
-    // After successful publish, refresh the articles list
+  const handlePublishArticle = async (articleId) => {
+    setLoading(true)
+    try {
+      await articlesApi.publish(articleId)
+      // Refresh the articles list after publishing
+      fetchArticles()
+    } catch (error) {
+      const errorDetails = handleApiError(error)
+      console.error("Failed to publish article:", errorDetails)
+      setError("Failed to publish article. Please try again.")
+    } finally {
+      setLoading(false)
+    }
     handleCloseActionMenu()
   }
 
@@ -302,6 +289,9 @@ export default function JournalistDashboardPage() {
       return dateString
     }
   }
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalCount / pageSize)
 
   return (
     <Box sx={{ display: "flex", width: "100%", maxWidth: 1200, mx: "auto" }}>
@@ -416,51 +406,65 @@ export default function JournalistDashboardPage() {
               </Typography>
             </Box>
           ) : (
-            <TableContainer component={Paper} sx={{ boxShadow: "none" }}>
-              <Table sx={{ minWidth: 650 }} aria-label="articles table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Title</TableCell>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Last Updated</TableCell>
-                    <TableCell>Views</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredArticles.map((article) => (
-                    <TableRow key={article.articleID} hover>
-                      <TableCell component="th" scope="row">
-                        {article.title}
-                      </TableCell>
-                      <TableCell>{article.categoryName}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={article.status === "published" ? "Published" : "Draft"}
-                          color={article.status === "published" ? "success" : "default"}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {article.status === "published"
-                          ? formatDate(article.publishedAt)
-                          : formatDate(article.updatedAt)}
-                      </TableCell>
-                      <TableCell>{article.status === "published" ? article.views : "—"}</TableCell>
-                      <TableCell align="right">
-                        <IconButton
-                          aria-label="article actions"
-                          onClick={(event) => handleOpenActionMenu(event, article)}
-                        >
-                          <MoreVert />
-                        </IconButton>
-                      </TableCell>
+            <>
+              <TableContainer component={Paper} sx={{ boxShadow: "none" }}>
+                <Table sx={{ minWidth: 650 }} aria-label="articles table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Title</TableCell>
+                      <TableCell>Category</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Last Updated</TableCell>
+                      <TableCell>Views</TableCell>
+                      <TableCell align="right">Actions</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {filteredArticles.map((article) => (
+                      <TableRow key={article.articleID} hover>
+                        <TableCell component="th" scope="row">
+                          {article.title}
+                        </TableCell>
+                        <TableCell>{article.categoryName}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={article.status === 1 ? "Published" : "Draft"}
+                            color={article.status === 1 ? "success" : "default"}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {article.status === 1 ? formatDate(article.publishedAt) : formatDate(article.updatedAt)}
+                        </TableCell>
+                        <TableCell>{article.status === 1 ? article.totalViews : "—"}</TableCell>
+                        <TableCell align="right">
+                          <IconButton
+                            aria-label="article actions"
+                            onClick={(event) => handleOpenActionMenu(event, article)}
+                          >
+                            <MoreVert />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={page}
+                    onChange={handlePageChange}
+                    color="primary"
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -479,7 +483,7 @@ export default function JournalistDashboardPage() {
           horizontal: "right",
         }}
       >
-        <MenuItem onClick={() => selectedArticle && handleViewArticle(selectedArticle.articleID)}>
+        <MenuItem onClick={() => selectedArticle && handleViewArticle(selectedArticle.articleID, selectedArticle.slug)}>
           <ListItemIcon>
             <Visibility fontSize="small" />
           </ListItemIcon>
@@ -491,7 +495,7 @@ export default function JournalistDashboardPage() {
           </ListItemIcon>
           Edit
         </MenuItem>
-        {selectedArticle && selectedArticle.status === "draft" && (
+        {selectedArticle && selectedArticle.status === 0 && (
           <MenuItem onClick={() => handlePublishArticle(selectedArticle.articleID)}>
             <ListItemIcon>
               <Publish fontSize="small" />
