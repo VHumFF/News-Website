@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom";
 import {
   Box,
   Card,
@@ -152,11 +153,13 @@ export default function SignUp() {
           justifyContent: "center",
         }}
       >
-        <img
-          src={logImg || "/placeholder.svg"}
-          alt="Logo"
-          style={{ width: "100%", height: "auto", objectFit: "contain" }}
-        />
+        <Link to="/">
+          <img
+            src={logImg || "/placeholder.svg"}
+            alt="Logo"
+            style={{ width: "100%", height: "auto", objectFit: "contain", cursor: "pointer" }}
+          />
+        </Link>
       </Box>
 
       {/* right form */}
