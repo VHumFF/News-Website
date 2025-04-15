@@ -67,16 +67,26 @@ export default function LogIn() {
   }
 
   // forgot password
-  const handleForgotPassword = () => {
+  const handleForgotPassword = async () => {
     setLoading(true)
     setError(null)
     setSuccess(null)
 
-    // Simulate API call for password reset
-    setTimeout(() => {
+    try {
+      await authApi.forgotPassword(resetEmail)
       setSuccess(`Password reset instructions sent to ${resetEmail}`)
+    } catch (error) {
+      const errorDetails = handleApiError(error)
+      console.error("Forgot password request failed:", errorDetails)
+
+      if (errorDetails.status === 404) {
+        setError("No account found with this email address.")
+      } else {
+        setError(errorDetails.message || "Failed to send password reset email. Please try again.")
+      }
+    } finally {
       setLoading(false)
-    }, 1500)
+    }
   }
 
   // Switch to forgot password form

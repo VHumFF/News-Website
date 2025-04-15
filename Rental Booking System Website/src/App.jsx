@@ -10,6 +10,7 @@ import AdminDashboard from "./pages/AdminDashboard"
 import ArticlePage from "./pages/ArticlePage"
 import AccountActivation from "./pages/AccountActivation"
 import JournalistActivation from "./pages/JournalistActivation"
+import ResetPassword from "./pages/ResetPassword"
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/activate/:token" element={<AccountActivation />} />
         <Route path="/activate-journalist/:token" element={<JournalistActivation />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/home" element={<Home />} />
         {/* Default News Route */}
         <Route path="/news" element={<News />} />

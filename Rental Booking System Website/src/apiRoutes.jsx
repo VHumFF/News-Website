@@ -54,6 +54,8 @@ export const authApi = {
   changePassword: (passwordData) => api.post("/api/Auth/change-password", passwordData),
   activateAccount: (token) => api.post(`/api/Auth/activate-account/${token}`),
   resendActivation: (email) => api.post("/api/Auth/resend-activation", { email }),
+  forgotPassword: (email) => api.post("/forgot-password", { email }),
+  resetPassword: (token, newPassword) => api.post("/reset-password", { token, newPassword }),
 }
 
 // Articles endpoints
