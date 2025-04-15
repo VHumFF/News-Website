@@ -59,12 +59,92 @@ const decodeToken = (token) => {
   }
 }
 
+// Custom Blot for image upload placeholder
+const createImageUploadPlaceholder = () => {
+  const BlockEmbed = ReactQuill.Quill.import("blots/block/embed")
+
+  class ImageUploadPlaceholder extends BlockEmbed {
+    static create(value) {
+      const node = super.create()
+      node.setAttribute("id", value.id)
+      node.setAttribute("contenteditable", false)
+
+      // Create placeholder container
+      const placeholderContainer = document.createElement("div")
+      placeholderContainer.className = "image-upload-placeholder"
+      placeholderContainer.style.width = "100%"
+      placeholderContainer.style.height = "200px"
+      placeholderContainer.style.backgroundColor = "#f0f0f0"
+      placeholderContainer.style.border = "2px dashed #ccc"
+      placeholderContainer.style.borderRadius = "4px"
+      placeholderContainer.style.display = "flex"
+      placeholderContainer.style.flexDirection = "column"
+      placeholderContainer.style.alignItems = "center"
+      placeholderContainer.style.justifyContent = "center"
+      placeholderContainer.style.padding = "20px"
+      placeholderContainer.style.boxSizing = "border-box"
+      placeholderContainer.style.margin = "10px 0"
+
+      // Add image icon
+      const iconContainer = document.createElement("div")
+      iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`
+      iconContainer.style.marginBottom = "10px"
+      iconContainer.style.color = "#888"
+
+      // Add status text
+      const statusText = document.createElement("div")
+      statusText.textContent = "Uploading image..."
+      statusText.style.marginBottom = "10px"
+      statusText.style.fontWeight = "bold"
+      statusText.style.color = "#555"
+
+      // Add progress bar container
+      const progressContainer = document.createElement("div")
+      progressContainer.style.width = "80%"
+      progressContainer.style.height = "8px"
+      progressContainer.style.backgroundColor = "#e0e0e0"
+      progressContainer.style.borderRadius = "4px"
+      progressContainer.style.overflow = "hidden"
+
+      // Add progress bar
+      const progressBar = document.createElement("div")
+      progressBar.className = "progress-bar"
+      progressBar.style.width = "0%"
+      progressBar.style.height = "100%"
+      progressBar.style.backgroundColor = "#6145DD"
+      progressBar.style.transition = "width 0.3s ease"
+
+      progressContainer.appendChild(progressBar)
+
+      // Assemble the placeholder
+      placeholderContainer.appendChild(iconContainer)
+      placeholderContainer.appendChild(statusText)
+      placeholderContainer.appendChild(progressContainer)
+
+      node.appendChild(placeholderContainer)
+      return node
+    }
+
+    static value(node) {
+      return { id: node.getAttribute("id") }
+    }
+  }
+
+  ImageUploadPlaceholder.blotName = "imageUploadPlaceholder"
+  ImageUploadPlaceholder.tagName = "div"
+  ImageUploadPlaceholder.className = "image-upload-placeholder-container"
+
+  ReactQuill.Quill.register(ImageUploadPlaceholder)
+  return ImageUploadPlaceholder
+}
+
 export default function ArticleEditorPage() {
   const navigate = useNavigate()
   const { articleId } = useParams()
   const isEditMode = !!articleId
   const fileInputRef = useRef(null)
   const quillRef = useRef(null)
+  const ImageUploadPlaceholder = useRef(null)
 
   // User state
   const [user, setUser] = useState(null)
@@ -96,6 +176,11 @@ export default function ArticleEditorPage() {
     imageUrl: "",
   })
 
+  // Register custom blot when component mounts
+  useEffect(() => {
+    ImageUploadPlaceholder.current = createImageUploadPlaceholder()
+  }, [])
+
   // Quill modules and formats
   const modules = {
     toolbar: [
@@ -124,6 +209,7 @@ export default function ArticleEditorPage() {
     "align",
     "link",
     "image",
+    "imageUploadPlaceholder",
   ]
 
   // Get user info from token on component mount
@@ -218,29 +304,65 @@ export default function ArticleEditorPage() {
     return !Object.values(newErrors).some((error) => error)
   }
 
+  // Helper function to upload image to S3 using presigned URL
+  const uploadToS3 = async (file, presignedUrl, onProgress) => {
+    try {
+      // Use XMLHttpRequest for better control over binary uploads
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open("PUT", presignedUrl, true)
+        xhr.setRequestHeader("Content-Type", file.type)
+
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            resolve()
+          } else {
+            reject(new Error(`Upload failed with status: ${xhr.status}`))
+          }
+        }
+
+        xhr.onerror = () => {
+          reject(new Error("XHR error occurred during upload"))
+        }
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100
+            console.log(`Upload progress: ${percentComplete.toFixed(2)}%`)
+            if (onProgress) {
+              onProgress(percentComplete)
+            }
+          }
+        }
+
+        // Send the file as binary data
+        xhr.send(file)
+      })
+    } catch (error) {
+      console.error("Error in uploadToS3:", error)
+      throw error
+    }
+  }
+
   // Handle image upload
   const handleImageUpload = async () => {
     if (!imageFile) return null
 
     try {
-      // Request presigned URL
-      const fileInfo = {
-        fileName: imageFile.name,
-        contentType: imageFile.type,
-      }
-      const presignedUrlResponse = await fileApi.getPresignedUrl(fileInfo)
-      const { presignedUrl, fileUrl } = presignedUrlResponse.data
+      // Get file extension from the file name
+      const fileExtension = imageFile.name.split(".").pop().toLowerCase()
 
-      // Upload to S3
-      await fetch(presignedUrl, {
-        method: "PUT",
-        body: imageFile,
-        headers: {
-          "Content-Type": imageFile.type,
-        },
-      })
+      // Request presigned URL with the file extension
+      const presignedUrlResponse = await fileApi.getPresignedUrl(fileExtension)
+      const { url: presignedUrl, fileName } = presignedUrlResponse.data
 
-      return fileUrl
+      // Upload to S3 using the presigned URL
+      await uploadToS3(imageFile, presignedUrl)
+
+      // Construct the final S3 URL using the base URL (everything before the query string)
+      const baseUrl = presignedUrl.split("?")[0]
+
+      return baseUrl
     } catch (error) {
       const errorDetails = handleApiError(error)
       console.error("Failed to upload image:", errorDetails)
@@ -382,6 +504,200 @@ export default function ArticleEditorPage() {
     setSuccess(null)
     setError(null)
   }
+
+  // Update progress bar in placeholder
+  const updatePlaceholderProgress = (placeholderId, progress) => {
+    const placeholder = document.getElementById(placeholderId)
+    if (placeholder) {
+      const progressBar = placeholder.querySelector(".progress-bar")
+      if (progressBar) {
+        progressBar.style.width = `${progress}%`
+      }
+
+      // Update status text if needed
+      if (progress >= 100) {
+        const statusText = placeholder.querySelector("div:nth-child(2)")
+        if (statusText) {
+          statusText.textContent = "Processing image..."
+        }
+      }
+    }
+  }
+
+  // Update placeholder to show loading state
+  const updatePlaceholderToLoading = (placeholderId) => {
+    const placeholder = document.getElementById(placeholderId)
+    if (placeholder) {
+      const statusText = placeholder.querySelector("div:nth-child(2)")
+      if (statusText) {
+        statusText.textContent = "Loading image..."
+      }
+
+      // Update progress bar to show indeterminate state
+      const progressBar = placeholder.querySelector(".progress-bar")
+      if (progressBar) {
+        progressBar.style.width = "100%"
+        progressBar.style.opacity = "0.7"
+        progressBar.style.animation = "pulse 1.5s infinite"
+      }
+
+      // Add pulse animation style if not already present
+      if (!document.getElementById("pulse-animation")) {
+        const style = document.createElement("style")
+        style.id = "pulse-animation"
+        style.textContent = `
+          @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 0.9; }
+            100% { opacity: 0.6; }
+          }
+        `
+        document.head.appendChild(style)
+      }
+    }
+  }
+
+  // Update placeholder to show error
+  const showPlaceholderError = (placeholderId, errorMessage) => {
+    const placeholder = document.getElementById(placeholderId)
+    if (placeholder) {
+      const container = placeholder.querySelector(".image-upload-placeholder")
+      if (container) {
+        // Change border color to red
+        container.style.borderColor = "#f44336"
+        container.style.backgroundColor = "#ffebee"
+
+        // Update icon to error icon
+        const iconContainer = placeholder.querySelector("div:first-child")
+        if (iconContainer) {
+          iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`
+          iconContainer.style.color = "#f44336"
+        }
+
+        // Update status text
+        const statusText = placeholder.querySelector("div:nth-child(2)")
+        if (statusText) {
+          statusText.textContent = errorMessage || "Upload failed"
+          statusText.style.color = "#f44336"
+        }
+
+        // Hide progress bar
+        const progressContainer = placeholder.querySelector("div:nth-child(3)")
+        if (progressContainer) {
+          progressContainer.style.display = "none"
+        }
+      }
+    }
+  }
+
+  // Preload image and replace placeholder when fully loaded
+  const preloadAndReplaceImage = (quill, placeholderId, imageUrl) => {
+    // Update placeholder to loading state
+    updatePlaceholderToLoading(placeholderId)
+
+    // Create a new image object to preload the image
+    const img = new Image()
+
+    // Set up event handlers
+    img.onload = () => {
+      // Image is fully loaded, now replace the placeholder
+      replacePlaceholderWithImage(quill, placeholderId, imageUrl)
+    }
+
+    img.onerror = () => {
+      // Show error in placeholder if image fails to load
+      showPlaceholderError(placeholderId, "Failed to load image")
+    }
+
+    // Start loading the image
+    img.src = imageUrl
+  }
+
+  // Helper function to replace a placeholder with an image
+  const replacePlaceholderWithImage = (quill, placeholderId, imageUrl) => {
+    // Find the placeholder element
+    const placeholderElement = document.getElementById(placeholderId)
+    if (!placeholderElement) return false
+
+    // Get the current selection or default to the end
+    const range = quill.getSelection() || { index: quill.getLength() - 1, length: 1 }
+
+    // Insert the image at the current selection
+    quill.insertEmbed(range.index, "image", imageUrl)
+
+    // Remove the placeholder from the DOM
+    placeholderElement.parentNode.removeChild(placeholderElement)
+
+    // Set selection after the image
+    quill.setSelection(range.index + 1)
+
+    return true
+  }
+
+  // Add this function to handle image uploads in the editor
+  const handleEditorImageUpload = () => {
+    // This function will be called when the component mounts
+    if (!quillRef.current || !ImageUploadPlaceholder.current) return
+
+    const quill = quillRef.current.getEditor()
+
+    // Override the image handler
+    const toolbar = quill.getModule("toolbar")
+    toolbar.addHandler("image", () => {
+      const input = document.createElement("input")
+      input.setAttribute("type", "file")
+      input.setAttribute("accept", "image/*")
+      input.click()
+
+      input.onchange = async () => {
+        const file = input.files[0]
+        if (!file) return
+
+        try {
+          // Generate a unique ID for this upload
+          const placeholderId = `image-upload-${Date.now()}`
+
+          // Insert placeholder at current cursor position
+          const range = quill.getSelection(true)
+          quill.insertEmbed(range.index, "imageUploadPlaceholder", { id: placeholderId })
+          quill.setSelection(range.index + 1)
+
+          // Get file extension
+          const fileExtension = file.name.split(".").pop().toLowerCase()
+
+          // Request presigned URL
+          const presignedUrlResponse = await fileApi.getPresignedUrl(fileExtension)
+          const { url: presignedUrl, fileName } = presignedUrlResponse.data
+
+          // Upload to S3 with progress tracking
+          await uploadToS3(file, presignedUrl, (progress) => {
+            updatePlaceholderProgress(placeholderId, progress)
+          })
+
+          // Get the final image URL (remove query parameters)
+          const imageUrl = presignedUrl.split("?")[0]
+
+          // Preload the image and replace placeholder when fully loaded
+          preloadAndReplaceImage(quill, placeholderId, imageUrl)
+        } catch (error) {
+          console.error("Error uploading image:", error)
+
+          // Show error in placeholder
+          const placeholderId = document.querySelector(".image-upload-placeholder-container")?.id
+          if (placeholderId) {
+            showPlaceholderError(placeholderId, "Failed to upload image")
+          }
+        }
+      }
+    })
+  }
+
+  // Add this useEffect to initialize the editor image upload handler
+  useEffect(() => {
+    if (quillRef.current && ImageUploadPlaceholder.current) {
+      handleEditorImageUpload()
+    }
+  }, [quillRef.current, ImageUploadPlaceholder.current])
 
   return (
     <Box sx={{ width: "100%", maxWidth: 1200, mx: "auto", pb: 10 }}>
@@ -534,7 +850,7 @@ export default function ArticleEditorPage() {
 
           {/* Editor */}
           {viewMode === "edit" ? (
-            <Box sx={{ height: "500px", mb: 2 }}>
+            <Box sx={{ height: "700px", mb: 2 }}>
               <ReactQuill
                 ref={quillRef}
                 theme="snow"
@@ -543,7 +859,7 @@ export default function ArticleEditorPage() {
                 modules={modules}
                 formats={formats}
                 placeholder="Write your article content here..."
-                style={{ height: "450px" }}
+                style={{ height: "650px" }}
               />
               {errors.content && (
                 <Typography color="error" variant="caption" sx={{ display: "block", mt: 1 }}>
@@ -555,18 +871,12 @@ export default function ArticleEditorPage() {
             <Paper
               sx={{
                 p: 0,
-                height: "500px",
+                height: "700px",
                 overflow: "auto",
                 bgcolor: "#f9f9f9",
               }}
             >
               <div className="ql-container ql-snow">
-                {/* <Typography variant="h4" gutterBottom>
-                    {title || "Article Title"}
-                  </Typography>
-                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                    {description || "Article description will appear here"}
-                  </Typography> */}
                 <div className="ql-editor quill-preview">
                   <Divider sx={{ my: 2 }} />
                   <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />

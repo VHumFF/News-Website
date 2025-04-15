@@ -67,7 +67,7 @@ export const adminApi = {
 
 // File upload endpoints
 export const fileApi = {
-  getPresignedUrl: (fileInfo) => api.get("/presigned-url", { params: fileInfo }),
+  getPresignedUrl: (extension = "jpg") => api.get(`/presigned-url?extension=${extension}`),
 }
 
 // Error handler helper
