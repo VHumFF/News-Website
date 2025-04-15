@@ -88,16 +88,6 @@ export const handleApiError = (error) => {
   }
 }
 
-// Example usage with error handling:
-// try {
-//   const response = await articlesApi.getTrending();
-//   return response.data;
-// } catch (error) {
-//   const errorDetails = handleApiError(error);
-//   console.error(errorDetails.message);
-//   // Handle error appropriately
-// }
-
 export default {
   auth: authApi,
   articles: articlesApi,
