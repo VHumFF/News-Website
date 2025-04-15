@@ -7,6 +7,7 @@ import Profile from "./pages/Profile"
 import JournalistDashboard from "./pages/JournalistDashboard"
 import ArticleEditor from "./pages/ArticleEditor"
 import AdminDashboard from "./pages/AdminDashboard"
+import ArticlePage from "./pages/ArticlePage"
 
 export default function App() {
   return (
@@ -20,6 +21,8 @@ export default function App() {
         {/* Dynamic News Routes */}
         <Route path="/news/:filter" element={<News />} />
         <Route path="/news/:category/:filter" element={<News />} />
+        {/* Article Detail Route */}
+        <Route path="/news/article/:articleId/:slug" element={<ArticlePage />} />
         {/* Profile Route */}
         <Route path="/profile" element={<Profile />} />
         {/* Journalist Dashboard Route */}
@@ -34,4 +37,3 @@ export default function App() {
     </Router>
   )
 }
-

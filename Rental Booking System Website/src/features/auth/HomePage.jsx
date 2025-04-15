@@ -286,7 +286,7 @@ export default function HomePage() {
   // Navigate to article detail
   const handleArticleClick = (articleId, slug) => {
     if (articleId && slug) {
-      navigate(`/news/${articleId}/${slug}`)
+      navigate(`/news/article/${articleId}/${slug}`)
     }
   }
 

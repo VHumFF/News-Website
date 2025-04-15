@@ -202,7 +202,7 @@ export default function JournalistDashboardPage() {
   const handleViewArticle = (articleId, slug) => {
     console.log("View article:", articleId)
     // Navigate to view page
-    navigate(`/news/${articleId}/${slug}`)
+    navigate(`/news/article/${articleId}/${slug}`)
     handleCloseActionMenu()
   }
 

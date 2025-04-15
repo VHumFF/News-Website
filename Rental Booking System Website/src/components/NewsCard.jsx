@@ -8,7 +8,7 @@ export default function NewsCard({ title, description, image, articleId, slug })
 
   const handleClick = () => {
     if (articleId && slug) {
-      navigate(`/news/${articleId}/${slug}`)
+      navigate(`/news/article/${articleId}/${slug}`)
     }
   }
 
