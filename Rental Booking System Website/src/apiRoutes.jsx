@@ -23,6 +23,30 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 )
 
+// Add response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Check if error is due to unauthorized access (401)
+    if (error.response && error.response.status === 401) {
+      console.log("Unauthorized access detected, redirecting to login page")
+
+      // Clear the auth token
+      localStorage.removeItem("authToken")
+
+      // Redirect to login page if we're not already there
+      const currentPath = window.location.pathname
+      if (!currentPath.includes("/login")) {
+        // Use window.location for a full page reload to clear any state
+        window.location.href = "/login"
+      }
+    }
+
+    // Return the error for further processing
+    return Promise.reject(error)
+  },
+)
+
 // Auth endpoints
 export const authApi = {
   login: (credentials) => api.post("/api/Auth/login", credentials),

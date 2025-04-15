@@ -37,6 +37,7 @@ import ReactQuill from "react-quill"
 import "react-quill/dist/quill.snow.css"
 import DOMPurify from "dompurify"
 import { articlesApi, categoriesApi, fileApi, handleApiError } from "@/apiRoutes"
+import axios from "axios"
 
 // Function to decode JWT token
 const decodeToken = (token) => {
@@ -166,6 +167,8 @@ export default function ArticleEditorPage() {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [viewMode, setViewMode] = useState("edit") // 'edit' or 'preview'
+  // Add a new state variable to track if the article is published
+  const [isPublished, setIsPublished] = useState(false)
 
   // Validation state
   const [errors, setErrors] = useState({
@@ -268,7 +271,7 @@ export default function ArticleEditorPage() {
     }
   }
 
-  // Fetch article data
+  // Update the fetchArticle function to set the isPublished state
   const fetchArticle = async (id) => {
     try {
       setLoading(true)
@@ -281,6 +284,8 @@ export default function ArticleEditorPage() {
       setCategoryId(article.categoryID || "")
       setImageUrl(article.imageURL || "")
       setImagePreview(article.imageURL || "")
+      // Set published status (status 1 means published)
+      setIsPublished(article.status === 1)
     } catch (error) {
       const errorDetails = handleApiError(error)
       console.error("Failed to fetch article:", errorDetails)
@@ -424,10 +429,26 @@ export default function ArticleEditorPage() {
         content,
         categoryID: Number(categoryId),
         imageURL: finalImageUrl,
+        status: 0, // 0 for draft
       }
 
       if (isEditMode) {
-        await articlesApi.update(articleId, articleData)
+        // Direct PUT request to update the article
+        await axios.put(
+          `http://localhost:5239/api/Articles/${articleId}`,
+          {
+            title,
+            description,
+            content,
+            categoryID: Number(categoryId),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+              "Content-Type": "application/json",
+            },
+          },
+        )
         setSuccess("Article updated successfully!")
       } else {
         const response = await articlesApi.create(articleData)
@@ -465,17 +486,27 @@ export default function ArticleEditorPage() {
         content,
         categoryID: Number(categoryId),
         imageURL: finalImageUrl,
+        status: 1, // 1 for published
       }
 
       if (isEditMode) {
-        await articlesApi.update(articleId, articleData)
-        await articlesApi.publish(articleId)
+        // Direct PUT request to publish the article
+        await axios.put(
+          `http://localhost:5239/api/Articles/${articleId}/publish`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+              "Content-Type": "application/json",
+            },
+          },
+        )
+        setSuccess("Article published successfully!")
       } else {
-        const response = await articlesApi.create(articleData)
-        await articlesApi.publish(response.data.articleID)
+        await articlesApi.create(articleData)
+        setSuccess("Article published successfully!")
       }
 
-      setSuccess("Article published successfully!")
       // Redirect to dashboard after short delay
       setTimeout(() => {
         navigate("/journalist-dashboard")
@@ -910,15 +941,18 @@ export default function ArticleEditorPage() {
         >
           {saving ? <CircularProgress size={24} /> : "Save Draft"}
         </Button>
-        <Button
-          variant="contained"
-          startIcon={<Publish />}
-          onClick={handlePublish}
-          disabled={saving || publishing || loading}
-          sx={{ bgcolor: "#6145DD" }}
-        >
-          {publishing ? <CircularProgress size={24} color="inherit" /> : "Publish"}
-        </Button>
+        {/* Only show Publish button if article is not already published */}
+        {!isPublished && (
+          <Button
+            variant="contained"
+            startIcon={<Publish />}
+            onClick={handlePublish}
+            disabled={saving || publishing || loading}
+            sx={{ bgcolor: "#6145DD" }}
+          >
+            {publishing ? <CircularProgress size={24} color="inherit" /> : "Publish"}
+          </Button>
+        )}
       </Box>
 
       {/* Success/Error Snackbar */}
