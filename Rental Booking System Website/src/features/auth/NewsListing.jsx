@@ -17,8 +17,11 @@ import {
   Skeleton,
   Card,
   CardContent,
+  TextField,
+  InputAdornment,
+  IconButton,
 } from "@mui/material"
-import { SearchOff, Refresh } from "@mui/icons-material"
+import { SearchOff, Refresh, Search, Clear } from "@mui/icons-material"
 import NewsCard from "@/components/NewsCard"
 import { articlesApi, categoriesApi, handleApiError } from "@/apiRoutes"
 
@@ -45,6 +48,11 @@ export default function NewsListing() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Check if we're in search mode
+  const isSearchMode = urlFilter === "search"
+  const searchParams = new URLSearchParams(location.search)
+  const queryFromUrl = searchParams.get("query") || ""
+
   // State for articles and pagination
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
@@ -55,7 +63,9 @@ export default function NewsListing() {
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(1)
+  const [totalResults, setTotalResults] = useState(0)
   const [prevPath, setPrevPath] = useState("")
+  const [searchQuery, setSearchQuery] = useState(queryFromUrl)
 
   // Track route changes and force refetch when needed
   useEffect(() => {
@@ -104,7 +114,12 @@ export default function NewsListing() {
     } else {
       setCategoryId(null)
     }
-  }, [urlFilter, urlCategory])
+
+    // Update search query from URL if in search mode
+    if (isSearchMode) {
+      setSearchQuery(queryFromUrl)
+    }
+  }, [urlFilter, urlCategory, isSearchMode, queryFromUrl])
 
   // Fetch category ID by name
   const fetchCategoryId = async (categoryName) => {
@@ -127,15 +142,18 @@ export default function NewsListing() {
 
   // Fetch articles when filter, category ID, or page changes
   useEffect(() => {
-    console.log("Fetch dependencies changed:", { filter, categoryId, page })
+    console.log("Fetch dependencies changed:", { filter, categoryId, page, isSearchMode, queryFromUrl })
 
     // Only wait for category ID if we're in a category route
-    if (urlCategory && !categoryId) {
+    if (urlCategory && !categoryId && !isSearchMode) {
       console.log("Waiting for category ID...")
       return
     }
 
-    if (categoryId) {
+    if (isSearchMode && queryFromUrl) {
+      console.log("Fetching search results")
+      fetchSearchResults()
+    } else if (categoryId) {
       console.log("Fetching category articles")
       fetchCategoryArticles()
     } else if (filter === "latest") {
@@ -145,7 +163,7 @@ export default function NewsListing() {
       console.log("Fetching trending articles")
       fetchTrendingArticles()
     }
-  }, [filter, categoryId, page])
+  }, [filter, categoryId, page, isSearchMode, queryFromUrl])
 
   // Dedicated functions for each type of fetch
   const fetchLatestArticles = async () => {
@@ -158,6 +176,7 @@ export default function NewsListing() {
       })
 
       setArticles(response.data.items || [])
+      setTotalResults(response.data.totalCount || 0)
       setTotalPages(Math.ceil((response.data.totalCount || 0) / pageSize))
     } catch (error) {
       const errorDetails = handleApiError(error)
@@ -179,6 +198,7 @@ export default function NewsListing() {
       })
 
       setArticles(response.data.items || [])
+      setTotalResults(response.data.totalCount || 0)
       setTotalPages(Math.ceil((response.data.totalCount || 0) / pageSize))
     } catch (error) {
       const errorDetails = handleApiError(error)
@@ -207,12 +227,43 @@ export default function NewsListing() {
       })
 
       setArticles(response.data.items || [])
+      setTotalResults(response.data.totalCount || 0)
       setTotalPages(Math.ceil((response.data.totalCount || 0) / pageSize))
     } catch (error) {
       const errorDetails = handleApiError(error)
       console.error("Failed to fetch category articles:", errorDetails)
       setError("Unable to load category articles. Please try again later.")
       setArticles([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchSearchResults = async () => {
+    if (!queryFromUrl.trim()) return
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await articlesApi.search({
+        params: {
+          query: queryFromUrl.trim(),
+          page,
+          pageSize,
+        },
+      })
+
+      setArticles(response.data.items || [])
+      setTotalResults(response.data.totalCount || 0)
+      setTotalPages(Math.ceil((response.data.totalCount || 0) / pageSize))
+    } catch (error) {
+      const errorDetails = handleApiError(error)
+      console.error("Failed to fetch search results:", errorDetails)
+      setError("Unable to load search results. Please try again later.")
+      setArticles([])
+      setTotalResults(0)
+      setTotalPages(1)
     } finally {
       setLoading(false)
     }
@@ -237,6 +288,26 @@ export default function NewsListing() {
   // Handle page change
   const handlePageChange = (event, newPage) => {
     setPage(newPage)
+    
+    // Update URL with page parameter if in search mode
+    if (isSearchMode) {
+      navigate(`/news/search?query=${encodeURIComponent(queryFromUrl)}&page=${newPage}`)
+    }
+  }
+
+  // Handle search form submission
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      setPage(1) // Reset to first page on new search
+      navigate(`/news/search?query=${encodeURIComponent(searchQuery.trim())}`)
+    }
+  }
+
+  // Clear search
+  const handleClearSearch = () => {
+    setSearchQuery("")
+    navigate("/news/latest")
   }
 
   // Close error snackbar
@@ -244,7 +315,9 @@ export default function NewsListing() {
 
   // Handle retry
   const handleRetry = () => {
-    if (categoryId) {
+    if (isSearchMode) {
+      fetchSearchResults()
+    } else if (categoryId) {
       fetchCategoryArticles()
     } else if (filter === "latest") {
       fetchLatestArticles()
@@ -254,7 +327,7 @@ export default function NewsListing() {
   }
 
   // Determine if we should show the filter dropdown
-  const showFilter = !!urlCategory
+  const showFilter = !!urlCategory && !isSearchMode
 
   // Render skeleton loaders
   const renderSkeletons = () => {
@@ -272,8 +345,10 @@ export default function NewsListing() {
       maxWidth="lg"
       sx={{
         py: 3,
-        height: "auto", // Allow container to expand with content
-        overflow: "visible", // Ensure content can overflow and be scrollable
+        height: "auto",
+        overflow: "visible",
+        maxWidth: "1400px",
+        mx: "auto",
       }}
     >
       <Box
@@ -281,15 +356,15 @@ export default function NewsListing() {
           display: "flex",
           flexDirection: "column",
           minHeight: "calc(100vh - 100px)",
-          position: "relative", // Needed for proper stacking
-          overflow: "visible", // Allow content to be visible and scrollable
+          position: "relative",
+          overflow: "visible",
         }}
       >
         {/* Header Row */}
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexShrink: 0 }}>
           <Typography variant="h5" sx={{ color: "black" }}>
             <Box component="span" sx={{ color: "blue", fontWeight: "bold" }}>
-              News{category ? " /" : ""}
+              News{category ? " /" : isSearchMode ? " / Search" : ""}
             </Box>
             {category && (
               <Box component="span" sx={{ color: "black" }}>
@@ -311,6 +386,56 @@ export default function NewsListing() {
             </Box>
           )}
         </Box>
+
+        {/* Search Form - Only show in search mode */}
+        {isSearchMode && (
+          <Box component="form" onSubmit={handleSearch} sx={{ mb: 4 }}>
+            <Box sx={{ display: "flex", width: "100%" }}>
+              <TextField
+                fullWidth
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Enter keywords to search for articles..."
+                variant="outlined"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchQuery && (
+                    <InputAdornment position="end">
+                      <IconButton onClick={handleClearSearch} edge="end">
+                        <Clear />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                variant="contained"
+                type="submit"
+                sx={{ ml: 2, bgcolor: "#6145DD" }}
+                disabled={!searchQuery.trim() || loading}
+              >
+                Search
+              </Button>
+            </Box>
+          </Box>
+        )}
+
+        {/* Search Results Count - Only show in search mode */}
+        {isSearchMode && queryFromUrl && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              {loading ? (
+                <Skeleton width={300} />
+              ) : (
+                `${totalResults} result${totalResults !== 1 ? "s" : ""} for "${queryFromUrl}"`
+              )}
+            </Typography>
+          </Box>
+        )}
 
         {/* News List */}
         <Box sx={{ flex: 1, mb: 3, overflow: "visible" }}>
@@ -351,10 +476,12 @@ export default function NewsListing() {
             >
               <SearchOff sx={{ fontSize: 60, color: "text.secondary", mb: 2 }} />
               <Typography variant="h6" gutterBottom>
-                No Articles Found
+                {isSearchMode ? "No Results Found" : "No Articles Found"}
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: "600px" }}>
-                {category
+                {isSearchMode
+                  ? `We couldn't find any articles matching "${queryFromUrl}". Please try different keywords or check your spelling.`
+                  : category
                   ? `We couldn't find any ${filter} articles in the ${category} category.`
                   : `We couldn't find any ${filter} articles at this time.`}
               </Typography>
@@ -390,3 +517,4 @@ export default function NewsListing() {
     </Container>
   )
 }
+

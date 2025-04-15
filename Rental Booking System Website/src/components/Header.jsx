@@ -54,6 +54,7 @@ export default function Header() {
   const [categoryMenuAnchor, setCategoryMenuAnchor] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
 
   // User state
   const [user, setUser] = useState(null)
@@ -73,6 +74,15 @@ export default function Header() {
       }
     }
   }, [])
+
+  // Extract search query from URL if on search page
+  useEffect(() => {
+    if (location.pathname === "/news/search") {
+      const params = new URLSearchParams(location.search)
+      const query = params.get("query") || ""
+      setSearchQuery(query)
+    }
+  }, [location])
 
   // fetch category from backend
   useEffect(() => {
@@ -106,6 +116,14 @@ export default function Header() {
     // Force a full navigation by adding a timestamp to force component remount
     if (location.pathname !== url) {
       navigate(url, { replace: true, state: { timestamp: Date.now() } })
+    }
+  }
+
+  // Handle search form submission
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/news/search?query=${encodeURIComponent(searchQuery.trim())}`)
     }
   }
 
@@ -220,17 +238,25 @@ export default function Header() {
           )}
 
           {/* Search Bar and Button */}
-          <TextField
-            variant="outlined"
-            placeholder="Search"
-            size="small"
-            sx={{ mx: 1, bgcolor: "white", flexGrow: isSmallScreen ? 1 : "unset" }}
-          />
-          {!isVerySmallScreen && (
-            <Button variant="contained" sx={{ display: "inline-block" }}>
-              Search
-            </Button>
-          )}
+          <Box
+            component="form"
+            onSubmit={handleSearch}
+            sx={{ display: "flex", flexGrow: isSmallScreen ? 1 : "unset" }}
+          >
+            <TextField
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              variant="outlined"
+              placeholder="Search"
+              size="small"
+              sx={{ bgcolor: "white", flexGrow: 1 }}
+            />
+            {!isVerySmallScreen && (
+              <Button variant="contained" type="submit" sx={{ ml: 1 }}>
+                Search
+              </Button>
+            )}
+          </Box>
 
           {/* User Menu Button */}
           {user ? (
@@ -326,3 +352,4 @@ export default function Header() {
     </Box>
   )
 }
+
