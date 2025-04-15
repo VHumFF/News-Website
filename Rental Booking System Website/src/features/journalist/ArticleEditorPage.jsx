@@ -38,6 +38,7 @@ import "react-quill/dist/quill.snow.css"
 import DOMPurify from "dompurify"
 import { articlesApi, categoriesApi, fileApi, handleApiError } from "@/apiRoutes"
 import axios from "axios"
+import ImageCropper from "@/components/ImageCropper"
 
 // Function to decode JWT token
 const decodeToken = (token) => {
@@ -158,6 +159,11 @@ export default function ArticleEditorPage() {
   const [imageUrl, setImageUrl] = useState("")
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState("")
+
+  // Cropper state
+  const [showCropper, setShowCropper] = useState(false)
+  const [cropperImage, setCropperImage] = useState("")
+  const [originalFile, setOriginalFile] = useState(null)
 
   // UI state
   const [categories, setCategories] = useState([])
@@ -389,19 +395,51 @@ export default function ArticleEditorPage() {
     }
   }
 
-  // Handle image selection
+  // Handle image selection - Modified to show cropper
   const handleImageSelect = (event) => {
     const file = event.target.files[0]
     if (!file) return
 
-    setImageFile(file)
+    setOriginalFile(file)
+
+    // Create a URL for the cropper
+    const imageUrl = URL.createObjectURL(file)
+    setCropperImage(imageUrl)
+    setShowCropper(true)
+  }
+
+  // Handle cropped image
+  const handleCroppedImage = (blob) => {
+    // Create a new file from the blob
+    const croppedFile = new File([blob], originalFile.name, {
+      type: originalFile.type,
+      lastModified: new Date().getTime(),
+    })
+
+    setImageFile(croppedFile)
 
     // Create preview
     const reader = new FileReader()
     reader.onload = (e) => {
       setImagePreview(e.target.result)
     }
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(blob)
+
+    // Close cropper
+    setShowCropper(false)
+
+    // Clean up the object URL
+    URL.revokeObjectURL(cropperImage)
+  }
+
+  // Handle crop cancellation
+  const handleCropCancel = () => {
+    setShowCropper(false)
+    URL.revokeObjectURL(cropperImage)
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
   }
 
   // Handle image removal
@@ -814,7 +852,7 @@ export default function ArticleEditorPage() {
 
           {/* Thumbnail Image */}
           <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
-            Thumbnail Image*
+            Thumbnail Image* (21:9 ratio)
           </Typography>
           <Box
             sx={{
@@ -856,7 +894,7 @@ export default function ArticleEditorPage() {
               <Box>
                 <ImageIcon sx={{ fontSize: 48, color: "text.secondary", mb: 1 }} />
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Upload a thumbnail image for your article
+                  Upload a thumbnail image for your article (21:9 ratio)
                 </Typography>
                 <Button variant="outlined" component="label" startIcon={<CloudUpload />} disabled={loading}>
                   Select Image
@@ -970,6 +1008,14 @@ export default function ArticleEditorPage() {
           </Button>
         )}
       </Box>
+
+      {/* Image Cropper Dialog */}
+      <ImageCropper
+        open={showCropper}
+        image={cropperImage}
+        onComplete={handleCroppedImage}
+        onCancel={handleCropCancel}
+      />
 
       {/* Success/Error Snackbar */}
       <Snackbar open={!!success || !!error} autoHideDuration={6000} onClose={handleCloseSnackbar}>
