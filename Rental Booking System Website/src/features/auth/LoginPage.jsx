@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"
 import {
   Box,
   Card,
@@ -18,7 +18,8 @@ import {
 } from "@mui/material"
 import { Visibility, VisibilityOff, ArrowBack } from "@mui/icons-material"
 import logImg from "@/assets/images/logo.png"
-import { authApi, handleApiError } from "@/apiRoutes"
+import { authApi } from "@/api/auth"
+import { handleApiError } from "@/api"
 
 export default function LogIn() {
   const navigate = useNavigate()

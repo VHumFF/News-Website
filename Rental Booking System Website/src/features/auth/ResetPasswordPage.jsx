@@ -15,7 +15,8 @@ import {
   IconButton,
 } from "@mui/material"
 import { CheckCircle, Visibility, VisibilityOff } from "@mui/icons-material"
-import { authApi, handleApiError } from "@/apiRoutes"
+import { authApi } from "@/api/auth"
+import { handleApiError } from "@/api"
 
 export default function ResetPasswordPage() {
   const { token } = useParams()

@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useRef, useEffect } from "react"
 import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop"
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material"
@@ -13,10 +15,10 @@ function centerAspectCrop(mediaWidth, mediaHeight, aspect) {
       },
       aspect,
       mediaWidth,
-      mediaHeight
+      mediaHeight,
     ),
     mediaWidth,
-    mediaHeight
+    mediaHeight,
   )
 }
 
@@ -64,7 +66,7 @@ export default function ImageCropper({ open, image, onComplete, onCancel }) {
       0,
       0,
       crop.width,
-      crop.height
+      crop.height,
     )
   }, [completedCrop])
 
@@ -92,7 +94,7 @@ export default function ImageCropper({ open, image, onComplete, onCancel }) {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             Drag to reposition. Resize using the corners.
           </Typography>
-          
+
           <ReactCrop
             crop={crop}
             onChange={(c) => setCrop(c)}
@@ -116,7 +118,7 @@ export default function ImageCropper({ open, image, onComplete, onCancel }) {
               ref={previewCanvasRef}
               style={{
                 width: completedCrop?.width ?? 0,
-                height: completedCrop?.height ?? 0
+                height: completedCrop?.height ?? 0,
               }}
             />
           </div>
@@ -124,9 +126,9 @@ export default function ImageCropper({ open, image, onComplete, onCancel }) {
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancel}>Cancel</Button>
-        <Button 
-          onClick={handleComplete} 
-          variant="contained" 
+        <Button
+          onClick={handleComplete}
+          variant="contained"
           color="primary"
           disabled={!completedCrop?.width || !completedCrop?.height}
         >

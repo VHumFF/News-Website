@@ -22,7 +22,8 @@ import {
   Snackbar,
 } from "@mui/material"
 import { PersonAdd } from "@mui/icons-material"
-import { adminApi, handleApiError } from "@/apiRoutes"
+import { adminApi } from "@/api/admin"
+import { handleApiError } from "@/api"
 
 // Function to decode JWT token
 const decodeToken = (token) => {

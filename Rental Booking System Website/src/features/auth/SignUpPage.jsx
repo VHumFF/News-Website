@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"
 import {
   Box,
   Card,
@@ -18,7 +18,8 @@ import {
 } from "@mui/material"
 import { Visibility, VisibilityOff, CheckCircle } from "@mui/icons-material"
 import logImg from "@/assets/images/logo.png"
-import { authApi, handleApiError } from "@/apiRoutes"
+import { authApi } from "@/api/auth"
+import { handleApiError } from "@/api"
 
 export default function SignUp() {
   const navigate = useNavigate()
@@ -31,9 +32,6 @@ export default function SignUp() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(false)
-
-  // Form validation
   const [errors, setErrors] = useState({
     firstName: "",
     lastName: "",
@@ -41,6 +39,7 @@ export default function SignUp() {
     password: "",
     confirmPassword: "",
   })
+  const [success, setSuccess] = useState(false)
 
   // check all textfield
   const isFormComplete =
@@ -119,10 +118,26 @@ export default function SignUp() {
     } catch (error) {
       const errorDetails = handleApiError(error)
       console.error("Registration failed:", errorDetails)
+      console.error("Error response data:", error.response?.data)
 
-      // Handle specific error cases
-      if (errorDetails.status === 400 && errorDetails.message?.includes("already registered")) {
-        setError("This email is already registered. Please use a different email or try logging in.")
+      // Handle specific error cases based on status code and message
+      if (errorDetails.status === 400) {
+        // Check for email already registered error
+        if (
+          error.response?.data === "Email is already registered." ||
+          errorDetails.message?.includes("already registered")
+        ) {
+          setError("This email is already registered. Please use a different email or try logging in.")
+          // Highlight the email field with error
+          setErrors({
+            ...errors,
+            email: "Email is already registered",
+          })
+        } else {
+          setError(errorDetails.message || "Please check your information and try again.")
+        }
+      } else if (errorDetails.status === 500) {
+        setError("Server error. Please try again later or contact support if the problem persists.")
       } else {
         setError(errorDetails.message || "Registration failed. Please try again.")
       }
@@ -234,7 +249,13 @@ export default function SignUp() {
                 variant="standard"
                 sx={{ mb: 2 }}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  // Clear email error when user starts typing again
+                  if (errors.email) {
+                    setErrors({ ...errors, email: "" })
+                  }
+                }}
                 error={!!errors.email}
                 helperText={errors.email}
                 disabled={loading}

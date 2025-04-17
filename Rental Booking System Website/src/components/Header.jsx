@@ -20,7 +20,8 @@ import {
 import { Menu as MenuIcon, Person, Logout, AdminPanelSettings, Article } from "@mui/icons-material"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useMediaQuery } from "@mui/material"
-import { categoriesApi, handleApiError } from "../apiRoutes"
+import { categoriesApi } from "@/api/categories"
+import { handleApiError } from "@/api"
 
 // Function to decode JWT token
 const decodeToken = (token) => {
@@ -238,11 +239,7 @@ export default function Header() {
           )}
 
           {/* Search Bar and Button */}
-          <Box
-            component="form"
-            onSubmit={handleSearch}
-            sx={{ display: "flex", flexGrow: isSmallScreen ? 1 : "unset" }}
-          >
+          <Box component="form" onSubmit={handleSearch} sx={{ display: "flex", flexGrow: isSmallScreen ? 1 : "unset" }}>
             <TextField
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -352,4 +349,3 @@ export default function Header() {
     </Box>
   )
 }
-

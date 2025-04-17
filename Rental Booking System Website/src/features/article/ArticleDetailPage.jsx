@@ -43,7 +43,10 @@ import {
   Close,
 } from "@mui/icons-material"
 import { format, parseISO, formatDistanceToNow } from "date-fns"
-import { articlesApi, commentsApi, likesApi, handleApiError } from "@/apiRoutes"
+import { articlesApi } from "@/api/articles"
+import { commentsApi } from "@/api/comments"
+import { likesApi } from "@/api/likes"
+import { handleApiError } from "@/api"
 import "react-quill/dist/quill.snow.css"
 
 // Update the decodeToken function to properly extract the user ID

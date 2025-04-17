@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Box, Card, CardContent, Typography, Button, TextField, Alert, CircularProgress, Paper } from "@mui/material"
 import { CheckCircle, ErrorOutline, Email } from "@mui/icons-material"
-import { authApi, handleApiError } from "@/apiRoutes"
-import axios from "axios"
+import { authApi } from "@/api/auth"
+import { handleApiError } from "@/api"
 
 export default function AccountActivationPage() {
   const { token } = useParams()
@@ -32,9 +32,7 @@ export default function AccountActivationPage() {
 
     const activateAccount = async () => {
       try {
-        // Using direct axios call since the token is in the URL
-        const response = await axios.post(`http://localhost:5239/api/Auth/activate-account/${token}`)
-
+        await authApi.activateAccount(token)
         setActivationStatus("success")
       } catch (error) {
         setActivationStatus("error")

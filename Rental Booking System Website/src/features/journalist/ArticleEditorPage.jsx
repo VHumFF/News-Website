@@ -36,8 +36,10 @@ import {
 import ReactQuill from "react-quill"
 import "react-quill/dist/quill.snow.css"
 import DOMPurify from "dompurify"
-import { articlesApi, categoriesApi, fileApi, handleApiError } from "@/apiRoutes"
-import axios from "axios"
+import { articlesApi } from "@/api/articles"
+import { categoriesApi } from "@/api/categories"
+import { fileApi } from "@/api/files"
+import { handleApiError } from "@/api"
 import ImageCropper from "@/components/ImageCropper"
 
 // Function to decode JWT token
@@ -195,12 +197,12 @@ export default function ArticleEditorPage() {
     toolbar: [
       [{ header: [1, 2, 3, 4, 5, 6, false] }],
       ["bold", "italic", "underline", "strike"],
-      [{ size: ['small', false, 'large', 'huge'] }],
+      [{ size: ["small", false, "large", "huge"] }],
       [{ color: [] }, { background: [] }],
       [{ list: "ordered" }, { list: "bullet" }],
       [{ indent: "-1" }, { indent: "+1" }],
       [{ align: [] }],
-      ['link', 'image', 'video'],
+      ["link", "image", "video"],
       ["clean"],
     ],
     clipboard: {
@@ -211,10 +213,10 @@ export default function ArticleEditorPage() {
   const formats = [
     "header",
     "bold",
-    'size',
+    "size",
     "italic",
     "underline",
-    'color',
+    "color",
     "background",
     "strike",
     "list",
@@ -223,9 +225,9 @@ export default function ArticleEditorPage() {
     "align",
     "link",
     "image",
-    'video',
+    "video",
     "imageUploadPlaceholder",
-    'align',
+    "align",
   ]
 
   // Get user info from token on component mount
@@ -321,8 +323,8 @@ export default function ArticleEditorPage() {
     // Title validation
     if (!title.trim()) {
       newErrors.title = "Title is required"
-    } else if (title.length > 100) {
-      newErrors.title = `Title is too long (${title.length}/100 characters)`
+    } else if (title.length > 150) {
+      newErrors.title = `Title is too long (${title.length}/150 characters)`
     }
 
     // Description validation
@@ -492,22 +494,13 @@ export default function ArticleEditorPage() {
       }
 
       if (isEditMode) {
-        // Direct PUT request to update the article
-        await axios.put(
-          `http://localhost:5239/api/Articles/${articleId}`,
-          {
-            title,
-            description,
-            content,
-            categoryID: Number(categoryId),
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-              "Content-Type": "application/json",
-            },
-          },
-        )
+        // Use the articlesApi.update function
+        await articlesApi.update(articleId, {
+          title,
+          description,
+          content,
+          categoryID: Number(categoryId),
+        })
         setSuccess("Article updated successfully!")
       } else {
         const response = await articlesApi.create(articleData)
@@ -549,17 +542,8 @@ export default function ArticleEditorPage() {
       }
 
       if (isEditMode) {
-        // Direct PUT request to publish the article
-        await axios.put(
-          `http://localhost:5239/api/Articles/${articleId}/publish`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-              "Content-Type": "application/json",
-            },
-          },
-        )
+        // Use the articlesApi.publish function
+        await articlesApi.publish(articleId)
         setSuccess("Article published successfully!")
       } else {
         await articlesApi.create(articleData)
@@ -636,12 +620,12 @@ export default function ArticleEditorPage() {
         const style = document.createElement("style")
         style.id = "pulse-animation"
         style.textContent = `
-          @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 0.9; }
-            100% { opacity: 0.6; }
-          }
-        `
+        @keyframes pulse {
+          0% { opacity: 0.6; }
+          50% { opacity: 0.9; }
+          100% { opacity: 0.6; }
+        }
+      `
         document.head.appendChild(style)
       }
     }
@@ -801,220 +785,235 @@ export default function ArticleEditorPage() {
         </Typography>
       </Box>
 
-      {/* Main content - Vertical layout */}
-      <Card sx={{ borderRadius: 2, boxShadow: 2, mb: 3 }}>
-        <CardContent sx={{ p: 3 }}>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Article Details
+      {/* Show loading state when editing and data is being fetched */}
+      {isEditMode && loading ? (
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10 }}>
+          <CircularProgress size={60} sx={{ mb: 4 }} />
+          <Typography variant="h6" gutterBottom>
+            Loading article data...
           </Typography>
-          <Divider sx={{ mb: 3 }} />
-
-          {/* Title */}
-          <TextField
-            label="Title"
-            fullWidth
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            margin="normal"
-            error={!!errors.title}
-            helperText={errors.title || `${title.length}/100 characters`}
-            disabled={loading}
-            required
-            inputProps={{ maxLength: 100 }}
-          />
-
-          {/* Description */}
-          <TextField
-            label="Description"
-            fullWidth
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            margin="normal"
-            multiline
-            rows={3}
-            error={!!errors.description}
-            helperText={errors.description || `${description.length}/200 characters`}
-            disabled={loading}
-            required
-            inputProps={{ maxLength: 250 }}
-          />
-
-          {/* Category */}
-          <FormControl fullWidth margin="normal" error={!!errors.categoryId} required>
-            <InputLabel>Category</InputLabel>
-            <Select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              label="Category"
-              disabled={loading}
-            >
-              {categories.map((category) => (
-                <MenuItem key={category.categoryID} value={category.categoryID}>
-                  {category.name}
-                </MenuItem>
-              ))}
-            </Select>
-            {errors.categoryId && <FormHelperText>{errors.categoryId}</FormHelperText>}
-          </FormControl>
-
-          {/* Thumbnail Image */}
-          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
-            Thumbnail Image* (21:9 ratio)
+          <Typography variant="body1" color="text.secondary">
+            Please wait while we fetch the article information.
           </Typography>
+        </Box>
+      ) : (
+        <>
+          {/* Main content - Vertical layout */}
+          <Card sx={{ borderRadius: 2, boxShadow: 2, mb: 3 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Article Details
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+
+              {/* Title */}
+              <TextField
+                label="Title"
+                fullWidth
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                margin="normal"
+                error={!!errors.title}
+                helperText={errors.title || `${title.length}/150 characters`}
+                disabled={loading}
+                required
+                inputProps={{ maxLength: 150 }}
+              />
+
+              {/* Description */}
+              <TextField
+                label="Description"
+                fullWidth
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                margin="normal"
+                multiline
+                rows={3}
+                error={!!errors.description}
+                helperText={errors.description || `${description.length}/200 characters`}
+                disabled={loading}
+                required
+                inputProps={{ maxLength: 250 }}
+              />
+
+              {/* Category */}
+              <FormControl fullWidth margin="normal" error={!!errors.categoryId} required>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  label="Category"
+                  disabled={loading}
+                >
+                  {categories.map((category) => (
+                    <MenuItem key={category.categoryID} value={category.categoryID}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.categoryId && <FormHelperText>{errors.categoryId}</FormHelperText>}
+              </FormControl>
+
+              {/* Thumbnail Image */}
+              <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+                Thumbnail Image* (21:9 ratio)
+              </Typography>
+              <Box
+                sx={{
+                  border: "1px dashed",
+                  borderColor: errors.imageUrl ? "error.main" : "divider",
+                  borderRadius: 1,
+                  p: 2,
+                  mb: 2,
+                  textAlign: "center",
+                }}
+              >
+                {imagePreview ? (
+                  <Box sx={{ position: "relative" }}>
+                    <img
+                      src={imagePreview || "/placeholder.svg"}
+                      alt="Thumbnail preview"
+                      style={{
+                        width: "100%",
+                        maxHeight: "200px",
+                        objectFit: "cover",
+                        borderRadius: "4px",
+                      }}
+                    />
+                    <IconButton
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        bgcolor: "rgba(0,0,0,0.5)",
+                        color: "white",
+                        "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                      }}
+                      onClick={handleRemoveImage}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <Box>
+                    <ImageIcon sx={{ fontSize: 48, color: "text.secondary", mb: 1 }} />
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Upload a thumbnail image for your article (21:9 ratio)
+                    </Typography>
+                    <Button variant="outlined" component="label" startIcon={<CloudUpload />} disabled={loading}>
+                      Select Image
+                      <input type="file" hidden accept="image/*" onChange={handleImageSelect} ref={fileInputRef} />
+                    </Button>
+                  </Box>
+                )}
+                {errors.imageUrl && (
+                  <Typography color="error" variant="caption" sx={{ display: "block", mt: 1 }}>
+                    {errors.imageUrl}
+                  </Typography>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Content Editor Card */}
+          <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Article Content
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+
+              {/* Editor/Preview tabs */}
+              <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
+                <Tabs value={viewMode} onChange={handleViewModeChange} aria-label="editor tabs">
+                  <Tab icon={<Edit />} iconPosition="start" label="Edit" value="edit" sx={{ textTransform: "none" }} />
+                  <Tab
+                    icon={<Visibility />}
+                    iconPosition="start"
+                    label="Preview"
+                    value="preview"
+                    sx={{ textTransform: "none" }}
+                  />
+                </Tabs>
+              </Box>
+
+              {/* Editor */}
+              {viewMode === "edit" ? (
+                <Box sx={{ height: "700px", mb: 2 }}>
+                  <ReactQuill
+                    ref={quillRef}
+                    theme="snow"
+                    value={content}
+                    onChange={handleContentChange}
+                    modules={modules}
+                    formats={formats}
+                    placeholder="Write your article content here..."
+                    style={{ height: "650px" }}
+                  />
+                  {errors.content && (
+                    <Typography color="error" variant="caption" sx={{ display: "block", mt: 1 }}>
+                      {errors.content}
+                    </Typography>
+                  )}
+                </Box>
+              ) : (
+                <Paper
+                  sx={{
+                    p: 0,
+                    height: "700px",
+                    overflow: "auto",
+                    bgcolor: "#f9f9f9",
+                  }}
+                >
+                  <div className="ql-container ql-snow">
+                    <div className="ql-editor quill-preview">
+                      <Divider sx={{ my: 2 }} />
+                      <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
+                    </div>
+                  </div>
+                </Paper>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Fixed action buttons */}
           <Box
             sx={{
-              border: "1px dashed",
-              borderColor: errors.imageUrl ? "error.main" : "divider",
-              borderRadius: 1,
-              p: 2,
-              mb: 2,
-              textAlign: "center",
+              position: "fixed",
+              bottom: 20,
+              right: 20,
+              display: "flex",
+              gap: 2,
+              zIndex: 1000,
+              backgroundColor: "rgba(255, 255, 255, 0.9)",
+              padding: 2,
+              borderRadius: 2,
+              boxShadow: 3,
             }}
           >
-            {imagePreview ? (
-              <Box sx={{ position: "relative" }}>
-                <img
-                  src={imagePreview || "/placeholder.svg"}
-                  alt="Thumbnail preview"
-                  style={{
-                    width: "100%",
-                    maxHeight: "200px",
-                    objectFit: "cover",
-                    borderRadius: "4px",
-                  }}
-                />
-                <IconButton
-                  sx={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                    bgcolor: "rgba(0,0,0,0.5)",
-                    color: "white",
-                    "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-                  }}
-                  onClick={handleRemoveImage}
-                >
-                  <Delete />
-                </IconButton>
-              </Box>
-            ) : (
-              <Box>
-                <ImageIcon sx={{ fontSize: 48, color: "text.secondary", mb: 1 }} />
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Upload a thumbnail image for your article (21:9 ratio)
-                </Typography>
-                <Button variant="outlined" component="label" startIcon={<CloudUpload />} disabled={loading}>
-                  Select Image
-                  <input type="file" hidden accept="image/*" onChange={handleImageSelect} ref={fileInputRef} />
-                </Button>
-              </Box>
-            )}
-            {errors.imageUrl && (
-              <Typography color="error" variant="caption" sx={{ display: "block", mt: 1 }}>
-                {errors.imageUrl}
-              </Typography>
-            )}
-          </Box>
-        </CardContent>
-      </Card>
-
-      {/* Content Editor Card */}
-      <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
-        <CardContent sx={{ p: 3 }}>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Article Content
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
-
-          {/* Editor/Preview tabs */}
-          <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
-            <Tabs value={viewMode} onChange={handleViewModeChange} aria-label="editor tabs">
-              <Tab icon={<Edit />} iconPosition="start" label="Edit" value="edit" sx={{ textTransform: "none" }} />
-              <Tab
-                icon={<Visibility />}
-                iconPosition="start"
-                label="Preview"
-                value="preview"
-                sx={{ textTransform: "none" }}
-              />
-            </Tabs>
-          </Box>
-
-          {/* Editor */}
-          {viewMode === "edit" ? (
-            <Box sx={{ height: "700px", mb: 2 }}>
-              <ReactQuill
-                ref={quillRef}
-                theme="snow"
-                value={content}
-                onChange={handleContentChange}
-                modules={modules}
-                formats={formats}
-                placeholder="Write your article content here..."
-                style={{ height: "650px" }}
-              />
-              {errors.content && (
-                <Typography color="error" variant="caption" sx={{ display: "block", mt: 1 }}>
-                  {errors.content}
-                </Typography>
-              )}
-            </Box>
-          ) : (
-            <Paper
-              sx={{
-                p: 0,
-                height: "700px",
-                overflow: "auto",
-                bgcolor: "#f9f9f9",
-              }}
+            <Button
+              variant="outlined"
+              startIcon={<Save />}
+              onClick={handleSaveDraft}
+              disabled={saving || publishing || loading}
             >
-              <div className="ql-container ql-snow">
-                <div className="ql-editor quill-preview">
-                  <Divider sx={{ my: 2 }} />
-                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
-                </div>
-              </div>
-            </Paper>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Fixed action buttons */}
-      <Box
-        sx={{
-          position: "fixed",
-          bottom: 20,
-          right: 20,
-          display: "flex",
-          gap: 2,
-          zIndex: 1000,
-          backgroundColor: "rgba(255, 255, 255, 0.9)",
-          padding: 2,
-          borderRadius: 2,
-          boxShadow: 3,
-        }}
-      >
-        <Button
-          variant="outlined"
-          startIcon={<Save />}
-          onClick={handleSaveDraft}
-          disabled={saving || publishing || loading}
-        >
-          {saving ? <CircularProgress size={24} /> : "Save Draft"}
-        </Button>
-        {/* Only show Publish button if article is not already published */}
-        {!isPublished && (
-          <Button
-            variant="contained"
-            startIcon={<Publish />}
-            onClick={handlePublish}
-            disabled={saving || publishing || loading}
-            sx={{ bgcolor: "#6145DD" }}
-          >
-            {publishing ? <CircularProgress size={24} color="inherit" /> : "Publish"}
-          </Button>
-        )}
-      </Box>
+              {saving ? <CircularProgress size={24} /> : "Save"}
+            </Button>
+            {/* Only show Publish button if article is not already published */}
+            {!isPublished && (
+              <Button
+                variant="contained"
+                startIcon={<Publish />}
+                onClick={handlePublish}
+                disabled={saving || publishing || loading}
+                sx={{ bgcolor: "#6145DD" }}
+              >
+                {publishing ? <CircularProgress size={24} color="inherit" /> : "Publish"}
+              </Button>
+            )}
+          </Box>
+        </>
+      )}
 
       {/* Image Cropper Dialog */}
       <ImageCropper

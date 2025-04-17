@@ -21,7 +21,8 @@ import {
   ListItemText,
 } from "@mui/material"
 import { Person, Lock, Check } from "@mui/icons-material"
-import { authApi, handleApiError } from "@/apiRoutes"
+import { authApi } from "@/api/auth"
+import { handleApiError } from "@/api"
 
 // Function to decode JWT token
 const decodeToken = (token) => {

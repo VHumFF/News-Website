@@ -1,8 +1,7 @@
-import React from 'react';
-import RegisterPage from '../features/auth/RegisterPage';
-import { Container, Box } from '@mui/material';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import RegisterPage from "../features/auth/RegisterPage"
+import { Container, Box } from "@mui/material"
+import Header from "../components/Header"
+import Footer from "../components/Footer"
 
 export default function Register() {
   return (
@@ -12,6 +11,6 @@ export default function Register() {
         <RegisterPage />
       </Container>
       <Footer />
-      </Box>
-  );
+    </Box>
+  )
 }

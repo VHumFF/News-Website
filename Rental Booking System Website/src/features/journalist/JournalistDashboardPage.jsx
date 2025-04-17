@@ -49,7 +49,8 @@ import {
   Visibility,
 } from "@mui/icons-material"
 import { format, parseISO } from "date-fns"
-import { articlesApi, handleApiError } from "@/apiRoutes"
+import { articlesApi } from "@/api/articles"
+import { handleApiError } from "@/api"
 
 // Function to decode JWT token
 const decodeToken = (token) => {
@@ -483,12 +484,14 @@ export default function JournalistDashboardPage() {
           horizontal: "right",
         }}
       >
-        <MenuItem onClick={() => selectedArticle && handleViewArticle(selectedArticle.articleID, selectedArticle.slug)}>
-          <ListItemIcon>
-            <Visibility fontSize="small" />
-          </ListItemIcon>
-          View
-        </MenuItem>
+        {selectedArticle && selectedArticle.status === 1 && (
+          <MenuItem onClick={() => handleViewArticle(selectedArticle.articleID, selectedArticle.slug)}>
+            <ListItemIcon>
+              <Visibility fontSize="small" />
+            </ListItemIcon>
+            View
+          </MenuItem>
+        )}
         <MenuItem onClick={() => selectedArticle && handleEditArticle(selectedArticle.articleID)}>
           <ListItemIcon>
             <Edit fontSize="small" />

@@ -15,7 +15,9 @@ import {
   IconButton,
 } from "@mui/material"
 import { CheckCircle, ErrorOutline, Visibility, VisibilityOff } from "@mui/icons-material"
-import axios from "axios"
+import { handleApiError } from "@/api"
+// Import the journalistApi
+import { journalistApi } from "@/api/journalist"
 
 export default function JournalistActivationPage() {
   const { token } = useParams()
@@ -55,18 +57,15 @@ export default function JournalistActivationPage() {
       return
     }
 
+    // Replace the validateToken function with journalistApi
     const validateToken = async () => {
       try {
-        const response = await axios.get(`http://localhost:5239/api/journalists/validate-activation/${token}`)
+        await journalistApi.validateActivation(token)
         setTokenStatus("valid")
       } catch (error) {
         setTokenStatus("invalid")
-
-        if (error.response) {
-          setErrorMessage(error.response.data.error || "Invalid or expired activation token.")
-        } else {
-          setErrorMessage("Failed to validate activation token. Please try again later.")
-        }
+        const errorDetails = handleApiError(error)
+        setErrorMessage(errorDetails.message || "Invalid or expired activation token.")
       } finally {
         setLoading(false)
       }
@@ -122,6 +121,7 @@ export default function JournalistActivationPage() {
   }
 
   // Handle form submission
+  // Replace the handleSubmit function with journalistApi
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -133,7 +133,7 @@ export default function JournalistActivationPage() {
     setFormError("")
 
     try {
-      const response = await axios.post("http://localhost:5239/api/journalists/activate", {
+      await journalistApi.activate({
         token,
         temporaryPassword,
         newPassword,
@@ -146,14 +146,11 @@ export default function JournalistActivationPage() {
       setNewPassword("")
       setConfirmPassword("")
     } catch (error) {
-      if (error.response) {
-        if (error.response.status === 401) {
-          setFormError("Incorrect temporary password. Please check the password provided in your email.")
-        } else {
-          setFormError(error.response.data.error || "Failed to activate account. Please try again.")
-        }
+      const errorDetails = handleApiError(error)
+      if (error.response && error.response.status === 401) {
+        setFormError("Incorrect temporary password. Please check the password provided in your email.")
       } else {
-        setFormError("Network error. Please check your connection and try again.")
+        setFormError(errorDetails.message || "Failed to activate account. Please try again.")
       }
     } finally {
       setFormLoading(false)

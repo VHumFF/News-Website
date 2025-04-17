@@ -1,6 +1,6 @@
 import { Box } from "@mui/material"
-import Header from "../components/Header"
-import NewsListing from "../features/auth/NewsListing"
+import Header from "@/components/Header"
+import NewsListing from "@/features/news/NewsListing"
 
 export default function News() {
   return (
